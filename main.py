@@ -50,13 +50,13 @@ async def on_message_delete(message):
 
     await borrarMensajeEspejo(message)
 
-@bot.command(name="pregunta")
-async def on_comand(ctx,*,consulta):
+# @bot.command(name="pregunta")
+# async def on_comand(ctx,*,consulta):
 
-    if not consulta:
-        return
+#     if not consulta:
+#         return
 
-    await consultar(ctx,consulta)
+#     await consultar(ctx,consulta)
 
 #Esto hace que Render no piense que mi bot se tomo vacaciones y lo siga obligando a trabajar por el resto de la eternidad!!!
 app = Flask('')
