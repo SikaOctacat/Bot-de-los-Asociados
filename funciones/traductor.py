@@ -55,10 +55,7 @@ async def traducir(message,config):
             respuesta = respuesta.text
 
         except:
-            try:
-                respuesta = traductor.translate(mensaje_original)
-            except:
-                respuesta = mensaje_original
+            respuesta = traductor.translate(mensaje_original)
 
         traduccion = respuesta + "\n" + "\n".join(links)
     else:

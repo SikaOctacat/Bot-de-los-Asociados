@@ -36,7 +36,10 @@ async def conectar(message,conexion):
             #Es esta parte ocurre la traduccion, mientes se ejecuta y se hacen los ajustes el bot muestra una señal de escribri
             traduccion = ""
             async with canal_destino.typing():
-                traduccion = await traducir(message,salida)
+                try:
+                    traduccion = await traducir(message,salida)
+                except:
+                    traduccion = message.content
 
                 #Aca se agregan los stickers y las imagenes
                 for sticker in message.stickers:
@@ -79,7 +82,7 @@ async def conectar(message,conexion):
     except Exception as e:
 
 
-        print("Oye Sika, algo fallo en la ejecucion, quizas usar el internet del vecino fue tan buena idea...")
+        print("Sika, algo salio mal el proceso de conexion, no me ignores y reparame!!!")
         print(e)
 
         general_ingles = bot.get_channel(canales[canal_ingles]["ID"])
