@@ -96,3 +96,28 @@ async def borrarMensajeEspejo(message):
         
     canales[canalClave]["historial"].pop(message.id, None)
     canales[canalEspejoClave]["historial"].pop(mensajeEspejoID, None)
+
+async def reaccionarMensajeEspejo(payload,borrar=False):
+    if payload.message_id in traducciones_activas:
+        try:
+            await traducciones_activas[payload.message_id]
+        except:
+            pass
+
+    mensaje_espejo_ID = await buscarMensaje(payload.message_id,"espejo",ID=True)
+    if not(mensaje_espejo_ID) or payload.user_id == bot.user.id:
+        return
+
+    try:
+        canal_espejo_ID = await buscarMensaje(mensaje_espejo_ID,"canal",ID=True)
+        canal_espejo = await bot.fetch_channel(canal_espejo_ID)
+        mensaje_espejo = await canal_espejo.fetch_message(mensaje_espejo_ID)
+
+        if borrar:
+            await mensaje_espejo.remove_reaction(payload.emoji,bot.user)
+        else:
+            await mensaje_espejo.add_reaction(payload.emoji)
+
+    except Exception as e:
+        print("No pude reaccionar o des-reaccionar a un mensaje (Litralmente)")
+        print(e)

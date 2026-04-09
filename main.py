@@ -19,6 +19,7 @@ async def on_message(message):
     if (message.webhook_id in lista_webhooks) or (bot.user == message.author):
         return
 
+    #Esta cosa lo que hace es crear la tarea de la traduccion, ya que podria ser interrumpida por otros elementos
     for conexion in conexiones.keys():
         for canal in conexiones[conexion]:
             if message.channel.id == canales[canal]["ID"]:
@@ -35,6 +36,16 @@ async def on_message(message):
                     traducciones_activas.pop(message.id,None)
 
                 break
+
+    #Aca reacciona el bot si lo mencionan, o le responden directamente, reutilzando el codigo del comando
+    mencionado = bot.user in message.mentions
+    respondido = (message.reference and message.reference.resolved) and message.reference.resolved == bot.user
+
+    if mencionado or respondido:
+        ctx = await bot.get_context(message)
+        
+        await consultar(ctx,message.content)
+
     
     #Esto hace que el bot escuche la funcion, eh, supongo que lo que hace es hacerlo esperar hasta que todo se cumpla
     await bot.process_commands(message)
@@ -50,13 +61,23 @@ async def on_message_delete(message):
 
     await borrarMensajeEspejo(message)
 
-# @bot.command(name="pregunta")
-# async def on_comand(ctx,*,consulta):
+@bot.event
+async def on_raw_reaction_add(payload):
 
-#     if not consulta:
-#         return
+    await reaccionarMensajeEspejo(payload)
 
-#     await consultar(ctx,consulta)
+@bot.event
+async def on_raw_reaction_remove(payload):
+
+    await reaccionarMensajeEspejo(payload,borrar=True)
+
+@bot.command(name="pregunta")
+async def on_comand(ctx,*,consulta):
+
+    if not consulta:
+        return
+
+    await consultar(ctx,consulta)
 
 #Esto hace que Render no piense que mi bot se tomo vacaciones y lo siga obligando a trabajar por el resto de la eternidad!!!
 app = Flask('')

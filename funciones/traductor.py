@@ -51,9 +51,11 @@ async def traducir(message,config):
                 Mensaje que debes traducir: {mensaje_original}"""
             )
             respuesta = respuesta.text
-
-        except:
+        except Exception as e:
             respuesta = traductor.translate(mensaje_original)
+            if not( "This model is currently experiencing high demand" in e):
+                print("Tuve que recurrir a metodos menos costosos...")
+                print(e)
 
         traduccion = respuesta + "\n" + "\n".join(links)
     else:
