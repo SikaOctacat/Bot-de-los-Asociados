@@ -38,25 +38,33 @@ async def conectar(message,conexion):
             async with canal_destino.typing():
                 try:
                     traduccion = await traducir(message,salida)
+
+                    #Aca se agregan los stickers y las imagenes
+                    for sticker in message.stickers:
+                        traduccion += f"\n{sticker.url}"
+
+                    for archivo in message.attachments:
+                        traduccion += f"\n{archivo.url}"
+
+                    if traduccion == "":
+                        return
                 except:
                     traduccion = message.content
 
-                #Aca se agregan los stickers y las imagenes
-                for sticker in message.stickers:
-                    traduccion += f"\n{sticker.url}"
+                
+            try:
+                msj_enviado = await webhook.send(
+                    content=traduccion,
+                    username= message.author.display_name,
+                    avatar_url= message.author.display_avatar.url,
+                    wait=True
+                )
+            except Exception as e:
+                general_espanol = bot.get_channel(canales[canal_espanol]["ID"])
+                if general_espanol:
+                    await general_espanol.send(f"Quizas no me gustan los emojis :)\n{e}")
 
-                for archivo in message.attachments:
-                    traduccion += f"\n{archivo.url}"
 
-                if traduccion == "":
-                    return
-            
-            msj_enviado = await webhook.send(
-                content=traduccion,
-                username= message.author.display_name,
-                avatar_url= message.author.display_avatar.url,
-                wait=True
-            )
 
 
         #Esto se encarga de actualizar el registo de mensajes
