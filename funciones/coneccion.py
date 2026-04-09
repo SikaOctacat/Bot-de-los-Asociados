@@ -60,9 +60,8 @@ async def conectar(message,conexion):
                     wait=True
                 )
             except Exception as e:
-                general_espanol = bot.get_channel(canales[canal_espanol]["ID"])
-                if general_espanol:
-                    await general_espanol.send(f"Quizas no me gustan los emojis :)\n{e}")
+                print("Yo habia ponido mi webhook aqui y ya no ta...")
+                print(e)
 
 
 

@@ -14,8 +14,8 @@ from threading import Thread
 load_dotenv()
 
 llave_IA = os.getenv("LLAVE_IA")
+cliente = genai.Client(api_key=llave_IA)
 llave_Discord = os.getenv("LLAVE_DISCORD")
-
 
 # Vale, entonces esto le dice a Discord que por favor me deje leer los mensajes de los usarios por favorcito
 intents = discord.Intents.default()

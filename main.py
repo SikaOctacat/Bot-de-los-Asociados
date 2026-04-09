@@ -2,6 +2,7 @@ from funciones import *
 from funciones.traductor import traducir
 from funciones.coneccion import conectar
 from funciones.mensajes import *
+from funciones.consulta import *
 
 # Quizas me hubiera sido mas utilo haber conocido esta funcion antes, no importa
 #El arroba lo que hace es algo asi como agregarle una funcion ya existente al principo de otra, en en este caso on_ready... Bastante curioso
@@ -48,6 +49,12 @@ async def on_message_edit(before, after):
 async def on_message_delete(message):
 
     await borrarMensajeEspejo(message)
+
+@bot.command(name="pregunta")
+async def on_comand(ctx,*args):
+    consulta = " ".join(args)
+
+    await consultar(ctx,consulta)
 
 #Esto hace que Render no piense que mi bot se tomo vacaciones y lo siga obligando a trabajar por el resto de la eternidad!!!
 app = Flask('')

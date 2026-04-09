@@ -1,8 +1,6 @@
 from .mensajes import buscarMensaje
 from funciones import *
 
-cliente = genai.Client(api_key=llave_IA)
-
 async def traducir(message,config):
 
     #Debo admiitr que este lo copie y pegue mi amiga gimena, no por flojera (Mas o menos) sino porque sin querer hice modificaciones sin guardar correctamente el codigo origina, no quera tardar mas tiempo
