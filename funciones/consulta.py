@@ -14,6 +14,6 @@ async def consultar(ctx,promt):
             """
         )
     except:
-        respuesta = "Justo ahora me quedado sin tokens, asi que ve quejarte con Sika de no recargarlos, yo me voy de sabatico hasta dentro de un rato"
+        respuesta = "Justo ahora me quedado sin tokens, asi que ve quejarte con Sika por no recargarlos, yo me voy de sabatico hasta dentro de un rato"
 
     await ctx.reply(respuesta)

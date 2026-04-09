@@ -51,8 +51,10 @@ async def on_message_delete(message):
     await borrarMensajeEspejo(message)
 
 @bot.command(name="pregunta")
-async def on_comand(ctx,*args):
-    consulta = " ".join(args)
+async def on_comand(ctx,*,consulta):
+
+    if not consulta:
+        return
 
     await consultar(ctx,consulta)
 
