@@ -29,27 +29,39 @@ async def conectar(message,conexion):
     try:
         #Esto extrae el webhook del canal y para usarlo
         async with aiohttp.ClientSession() as session:
-            webhook =  Webhook.from_url(salida["webhook_destino"],session=session)
-
             canal_destino = bot.get_channel(llegada["ID"])
+            
+            #Esto crea el boton con el mensaje de escribiendo en otro canal, cuando el mensaje llegue (O falle) se borrara
+            view = discord.ui.View()
+            boton = discord.ui.Button(
+                label = message.author.display_name+salida["escribiendo"],
+                emoji="<a:cargando:1494343118265258155>",
+                style= discord.ButtonStyle.gray,
+                disabled=True
+            )
+            view.add_item(boton)
+
+            escribiendo = await canal_destino.send(view=view)
+
+            webhook =  Webhook.from_url(salida["webhook_destino"],session=session)
 
             #Es esta parte ocurre la traduccion, mientes se ejecuta y se hacen los ajustes el bot muestra una señal de escribri
             traduccion = ""
-            async with canal_destino.typing():
-                try:
-                    traduccion = await traducir(message,salida)
 
-                    #Aca se agregan los stickers y las imagenes
-                    for sticker in message.stickers:
-                        traduccion += f"\n{sticker.url}"
+            try:
+                traduccion = await traducir(message,salida)
 
-                    for archivo in message.attachments:
-                        traduccion += f"\n{archivo.url}"
+                #Aca se agregan los stickers y las imagenes
+                for sticker in message.stickers:
+                    traduccion += f"\n{sticker.url}"
 
-                    if traduccion == "":
-                        return
-                except:
-                    traduccion = message.content
+                for archivo in message.attachments:
+                    traduccion += f"\n{archivo.url}"
+
+                if traduccion == "":
+                    return
+            except:
+                traduccion = message.content
 
                 
             try:
@@ -57,13 +69,17 @@ async def conectar(message,conexion):
                     content=traduccion,
                     username= message.author.display_name,
                     avatar_url= message.author.display_avatar.url,
+                    # allowed_mentions=discord.AllowedMentions(users=False),
                     wait=True
                 )
             except Exception as e:
                 print("Yo habia ponido mi webhook aqui y ya no ta...")
                 print(e)
 
-
+            try:
+                await escribiendo.delete()
+            except:
+                print("EHHH, ni para esperar me dejan...")
 
 
         #Esto se encarga de actualizar el registo de mensajes
@@ -71,12 +87,14 @@ async def conectar(message,conexion):
 
         canales[salidaClave]["historial"][message.id] = {
             "autor": message.author.display_name,
+            "autor_ID": message.author.id,
             "contenido": message.content[:limite_mensajes_largo],
             "espejo": msj_enviado.id
         }
 
         canales[llegadaClave]["historial"][msj_enviado.id] = {
             "autor": message.author.display_name,
+            "autor_ID": message.author.id,
             "contenido": traduccion[:limite_mensajes_largo],
             "espejo": message.id
         }

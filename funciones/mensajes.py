@@ -8,11 +8,12 @@ async def buscarMensaje(messageID,buscar="mensaje",ID=False):
 
         if mensaje:
             if ID:
-
                 if buscar == "canal":
                     return canales[clave]["ID"]
                 elif buscar == "espejo":
                     return mensaje["espejo"]
+                elif buscar == "autor":
+                    return mensaje["autor_ID"]
 
                 return mensaje["ID"]
             else:
@@ -20,6 +21,8 @@ async def buscarMensaje(messageID,buscar="mensaje",ID=False):
                     return clave
                 elif buscar == "espejo":
                     return await buscarMensaje(mensaje["espejo"])
+                elif buscar == "autor":
+                    return mensaje["autor"]
 
                 return mensaje["contenido"]
     
@@ -121,3 +124,24 @@ async def reaccionarMensajeEspejo(payload,borrar=False):
     except Exception as e:
         print("No pude reaccionar o des-reaccionar a un mensaje (Litralmente)")
         print(e)
+
+async def filtrarMensajesPings(servidor,mensaje):
+    resultado = mensaje
+    ids_encontradas = re.findall(r'<@(!|&)?(\d+)>', resultado)
+    
+
+    for prefijo,id, in ids_encontradas:
+        id = int(id)
+
+        try:
+            miembro = servidor.get_member(id)
+            if not miembro:
+                miembro = await servidor.fetch_member(id)
+            reconstruccion = f"@{miembro.display_name}"
+        except:
+            reconstruccion = f"@{id}"
+
+        mencionOriginal = f"<@{prefijo}{id}>"
+        resultado = resultado.replace(mencionOriginal,reconstruccion)
+
+    return resultado

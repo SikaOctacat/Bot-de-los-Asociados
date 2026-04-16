@@ -2,7 +2,10 @@ from funciones import *
 from funciones.traductor import traducir
 from funciones.coneccion import conectar
 from funciones.mensajes import *
-from funciones.consulta import *
+from funciones.resumen import *
+from funciones.consulta import consultar
+from funciones import consulta
+
 
 # Quizas me hubiera sido mas utilo haber conocido esta funcion antes, no importa
 #El arroba lo que hace es algo asi como agregarle una funcion ya existente al principo de otra, en en este caso on_ready... Bastante curioso
@@ -14,10 +17,13 @@ async def on_ready():
 #Ahora que lo veo mejor, message se supone que va ser un objeto entero con mucha info, no solo un string, lo cual tiene sentido
 @bot.event
 async def on_message(message):
-
     #Esto evita que bot no se cofunda consigo mismo, me suele pasar cuando me volteo y me miro al espejo
-    if (message.webhook_id in lista_webhooks) or (bot.user == message.author):
-        return
+    if message.webhook_id in lista_webhooks:
+            return
+
+    if bot.user == message.author:
+        if not(message.content.endswith(marca)):
+            return
 
     #Esta cosa lo que hace es crear la tarea de la traduccion, ya que podria ser interrumpida por otros elementos
     for conexion in conexiones.keys():
@@ -71,6 +77,19 @@ async def on_raw_reaction_remove(payload):
 
     await reaccionarMensajeEspejo(payload,borrar=True)
 
+@bot.command()
+async def sync(ctx):
+    if ctx.author.id == 612445390314274826:
+        try:
+            await tree.sync()
+            await ctx.send("Los comandos slash han sido sincronizados, Sika")
+        except Exception as e:
+            await ctx.send("Los comandos no pudieron sincronizarce, Sika")
+            print(e)
+    else:   
+        await ctx.send("Quien sos vos? LOL, conseguite una vida pibe, no tienes los permisos")
+
+
 @bot.command(name="pregunta")
 async def on_comand(ctx,*,consulta):
 
@@ -79,10 +98,42 @@ async def on_comand(ctx,*,consulta):
 
     await consultar(ctx,consulta)
 
+@tree.command(name="resume",description="Pidele al bot que resuma un texto por ti")
+async def pregunta(interaction: discord.Interaction,texto:str):
+    await interaction.response.defer()
+
+    resumen = await resumir(texto)
+    await responderMensaje(interaction.followup,resumen)
+
+@bot.command(name="resume")
+async def on_comand(ctx,*,consulta):
+
+    if not consulta:
+        return
+    
+    respuesta = await resumir(consulta)
+    if respuesta:
+        await responderMensaje(ctx,respuesta)
+    else:
+        await ctx.reply("Justo ahora no puedo resumir"+marca)
+
 @bot.command(name="contexto")
 async def on_comand(ctx):
 
-    ctx.reply(contexto)
+    if ctx.author.id != 612445390314274826:
+        return
+
+    for _ in range(10):
+        if consulta.contexto and consulta.contexto != "":
+            await responderMensaje(ctx,consulta.contexto,limite=1990,envol="`")
+            return
+            
+        await asyncio.sleep(0.5)
+        
+
+    await ctx.reply("No tengo contexto todavia..."+marca)
+
+
 
 #Esto hace que Render no piense que mi bot se tomo vacaciones y lo siga obligando a trabajar por el resto de la eternidad!!!
 app = Flask('')
