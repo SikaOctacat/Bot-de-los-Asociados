@@ -83,10 +83,6 @@ async def conectar(message,conexion):
                 print(e)
 
             #Forma algo torpe, pero sencilla, de gestionar el orde de llegada de los mensajes
-            while traduccionesIniciadas != traduccionActual:
-                await asyncio.sleep(0.1)
-            else:
-                await asyncio.sleep(0.5)
                 
             try:
                 msj_enviado = await webhook.send(
