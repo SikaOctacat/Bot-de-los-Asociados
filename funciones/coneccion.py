@@ -126,7 +126,7 @@ async def conectar(message,conexion):
         
         tokens = True
     except Exception as e:
-
+        
         if not tokens:
             print("Sika, algo salio mal el proceso de conexion, no me ignores y reparame!!!")
             print(e)

@@ -25,6 +25,7 @@ llave_Discord = os.getenv("LLAVE_DISCORD")
 # Vale, entonces esto le dice a Discord que por favor me deje leer los mensajes de los usarios por favorcito
 intents = discord.Intents.default()
 intents.message_content = True
+intents.typing = True
 
 #Esto declara el objeto que sera el bot... Creo
 bot = commands.Bot(command_prefix="$",intents=intents)

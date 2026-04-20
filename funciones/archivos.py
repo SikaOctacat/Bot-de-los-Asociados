@@ -1,13 +1,19 @@
 from funciones import *
 
 async def guardarArchivo(payload):
+
     listaArchivos = []
 
     canal = bot.get_channel(payload.channel_id)
     mensaje = await canal.fetch_message(payload.message_id)
     usuario = bot.get_user(payload.user_id) or await bot.fetch_user(payload.user_id)
 
-    if str(payload.emoji) != "⭐" or not mensaje.attachments:
+    if usuario.bot:
+        return
+
+    poseeLinks = bool(re.search(r'https?://\S+|www\.\S+',mensaje.content))
+
+    if str(payload.emoji) != "⭐" or (not(mensaje.attachments) and not(poseeLinks)):
         return
     
     for archivo in mensaje.attachments:

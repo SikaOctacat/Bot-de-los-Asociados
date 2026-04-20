@@ -28,12 +28,6 @@ async def traducir(message,config):
 
     if mensaje_original.strip() == "":
         return message.content
-    
-    #Esto obtiene los links, parece Malbolge xd
-    links = re.findall(r'(https?://[^\s]+|www\.[^\s]+)', mensaje_original)
-
-    for link in links:
-        mensaje_original = mensaje_original.replace(link,"")
 
     #¿Como va terminar esto?
     if mensaje_original.strip() != "":
@@ -44,9 +38,7 @@ async def traducir(message,config):
 
         #Otra invocacion demoniaca, esta vez anula los pings
         respuesta = await filtrarMensajesPings(message.guild,respuesta)
-        traduccion = respuesta + "\n" + "\n".join(links)
-    else:
-        traduccion = "\n".join(links)
+        traduccion = respuesta
 
     if reenvio:
         traduccion = f"> <:reenviado:1495526768679981167> **{config["reenviado"]}**\n> " + traduccion
