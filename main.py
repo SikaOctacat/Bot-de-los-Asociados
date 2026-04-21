@@ -4,7 +4,7 @@ from funciones.coneccion import conectar
 from funciones.mensajes import *
 from funciones.resumen import *
 from funciones.consulta import consultar
-from funciones.guardar import archivo
+from funciones.guardar import *
 from funciones import consulta
 
 
@@ -75,6 +75,7 @@ async def on_raw_reaction_add(payload):
     await reaccionarMensajeEspejo(payload)
 
     await archivo(payload)
+    await fueraDeContexto(payload)
 
 
 

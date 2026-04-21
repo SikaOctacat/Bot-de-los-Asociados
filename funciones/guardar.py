@@ -25,9 +25,10 @@ async def archivo(payload):
 
         listaArchivos.append(discord.File(io.BytesIO(bytes),filename=archivo.filename))
 
-    fechaFormato = mensaje.created_at.strftime("%d/%m/%Y a las %I:%M %p")
+    #Esta cosa es para que la hora se ajusta la del usuaro y tenga un formato lindo
+    fechaFormato = f"<t:{int(mensaje.created_at.timestamp())}:f>"
 
-    descripcion = f"> Servidor: **{mensaje.guild.name}**\n> Canal: **{mensaje.channel.name}**\n> Fecha y hora: **{fechaFormato}**\n> Publicado por: **{mensaje.author.display_name} ({mensaje.author.global_name},{mensaje.author.name})**\n> Mensaje original: **{mensaje.jump_url}**"
+    descripcion = f"> Servidor: **{mensaje.guild.name}**\n> Canal: **{mensaje.channel.name}**\n> Fecha y hora: **{fechaFormato}**\n> Publicado por: **{mensaje.author.display_name} ({mensaje.author.name})**\n> Mensaje original: **{mensaje.jump_url}**"
 
     if mensaje.content != "":
         descripcion += f'\n{mensaje.content}'
@@ -41,6 +42,7 @@ async def archivo(payload):
             usuariosConMD.append(usuario.id)
 
         mensajeResultado = await usuario.send(descripcion,files=listaArchivos)
+        
         mensajesMD[mensajeResultado.id] = mensajeResultado
         recortarRegistro(mensajesMD,exceso=1)
 
@@ -66,6 +68,7 @@ async def fueraDeContexto(payload):
     if victimario.bot:
         return
 
+    #Como depende del servidor, se tiene que hacer esto
     match mensaje.guild.id:
         case 1020042170230648852:
             config = canales["senderoContexto"]
@@ -76,6 +79,8 @@ async def fueraDeContexto(payload):
         
     if mensaje.id in config["historial"]:
         return
+
+    
 
     for archivo in mensaje.attachments:
         bytes = await archivo.read()
@@ -94,8 +99,17 @@ async def fueraDeContexto(payload):
             )
             config["historial"].append(mensaje.id)
 
-            fechaFormato = mensaje.created_at.strftime("%d/%m/%Y a las %I:%M %p")
-            await resultado.reply(f"Tomado por: {victimario.mention}\nFecha orginal: {fechaFormato}")
+            #Dado que los webhooks no se les puede hacer reply directamente, se debe hacer esta maroma
+            canalDestino = bot.get_channel(config["ID"])
+            referencia = discord.MessageReference(
+                message_id= resultado.id,
+                channel_id= canalDestino.id,
+                guild_id= mensaje.guild.id
+            )
+
+            #Esta cosa es para que la hora se ajusta la del usuaro y tenga un formato lindo
+            fechaFormato = f"<t:{int(mensaje.created_at.timestamp())}:f>"
+            await canalDestino.send(f"Tomado por: {victimario.mention}\nFecha y hora orginal: {fechaFormato}",reference=referencia)
 
         except Exception as e:
             print("Uy, yo si queria descontextualizarlo...")
