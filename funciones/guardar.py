@@ -91,8 +91,9 @@ async def fueraDeContexto(payload):
         try:
             webhook = Webhook.from_url(config["webhook"],session=session)
 
+            mensajeFiltrado = await filtrarMensajesPings(mensaje.guild,mensaje.content)
             resultado = await webhook.send(
-                content=filtrarMensajesPings(mensaje.guild,mensaje.content),
+                content=mensajeFiltrado,
                 username=victima.display_name,
                 avatar_url= victima.display_avatar.url,
                 files=listaArchivos,
