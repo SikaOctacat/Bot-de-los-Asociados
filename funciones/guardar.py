@@ -1,5 +1,5 @@
 from funciones import *
-from mensajes import filtrarMensajesPings
+from .mensajes import filtrarMensajesPings
 
 async def archivo(payload):
 
