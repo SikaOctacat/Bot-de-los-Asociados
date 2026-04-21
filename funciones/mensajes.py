@@ -4,6 +4,8 @@ async def buscarMensaje(messageID,buscar="mensaje",ID=False):
 
     for clave in canales:
         historial = canales[clave]["historial"]
+        if not(isinstance(historial,dict)):
+            continue
         mensaje = historial.get(messageID)
 
         if mensaje:
