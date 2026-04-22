@@ -3,9 +3,6 @@ from .mensajes import filtrarMensajesPings
 
 async def archivo(payload):
 
-    if str(payload.emoji) != "⭐":
-        return
-
     listaArchivos = []
 
     canal = bot.get_channel(payload.channel_id)
@@ -15,11 +12,15 @@ async def archivo(payload):
     if usuario.bot:
         return
     
-    if mensaje.guild == None:
-        if str(payload.emoji) == "❌" and mensaje.id in mensajesMD:
-            await mensajesMD[mensaje.id].delete()
-            del mensajesMD[mensaje.id]
+    if str(payload.emoji) == "❌":
+        if (usuario.id in mensajesMD) and (mensaje.id in mensajesMD[usuario.id]):
+            for borrar in range(len(mensajesMD[usuario.id][mensaje.id])):
+                await mensajesMD[usuario.id][mensaje.id][borrar].delete()
+            del mensajesMD[usuario.id][mensaje.id]
         return
+    elif str(payload.emoji) != "⭐":
+        return
+
 
     for archivo in mensaje.attachments:
         bytes = await archivo.read()
@@ -31,8 +32,6 @@ async def archivo(payload):
 
     descripcion = f"> Servidor: **{mensaje.guild.name}**\n> Canal: **{mensaje.channel.name}**\n> Fecha y hora: **{fechaFormato}**\n> Publicado por: **{mensaje.author.display_name} ({mensaje.author.name})**\n> Mensaje original: **{mensaje.jump_url}**"
 
-    if mensaje.content != "":
-        descripcion += f'\n{mensaje.content}'
 
     try:   
         directorio = os.path.dirname(__file__)
@@ -42,10 +41,15 @@ async def archivo(payload):
             await usuario.send('Recciona con una "❌" para borrar cualquiera de los archivos\n\nTambien puedes puedes filtras las imagenes por nombre u usuario usando el buscador nativo de discord\n------------------------------------------------')
             usuariosConMD.append(usuario.id)
 
-        mensajeResultado = await usuario.send(descripcion,files=listaArchivos)
+        mensajeDescripcion = await usuario.send(descripcion)
+        mensajeResultado = await mensajeDescripcion.reply(mensaje.content,files=listaArchivos)
 
-        mensajesMD[mensajeResultado.id] = mensajeResultado
-        recortarRegistro(mensajesMD,exceso=1)
+        if not (usuario.id in mensajesMD):
+            mensajesMD[usuario.id] = {}
+
+        
+        mensajesMD[usuario.id][mensajeResultado.id] = [mensajeResultado,mensajeDescripcion]
+        recortarRegistro(mensajesMD[usuario.id][mensajeResultado.id],exceso=1)
 
     except:
         instruccion = await canal.send(f'{usuario.mention} Para poder guardar los mensajes en tu MD debes tener configurado **en tu perfil** en la seccion de **Permisos de interacción** la opcion de **Mensajes directos** activa al menos para este servidor:',file=discord.File(indicacion))
@@ -111,7 +115,7 @@ async def fueraDeContexto(payload):
 
             #Esta cosa es para que la hora se ajusta la del usuaro y tenga un formato lindo
             fechaFormato = f"<t:{int(mensaje.created_at.timestamp())}:f>"
-            await canalDestino.send(f"Tomado por: {victimario.mention}\nFecha y hora orginal: {fechaFormato}",reference=referencia)
+            await canalDestino.send(f"Tomado por: {victimario.mention}\nFecha y hora original: {fechaFormato}",reference=referencia)
 
         except Exception as e:
             print("Uy, yo si queria descontextualizarlo...")
