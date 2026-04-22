@@ -48,7 +48,11 @@ async def consultar(ctx,prompt):
         contexto += f"-----En canal {canal} del servidor {servidor}-----\n"
         canalActual = canal
 
-    contexto += f"{nombreServidor}:{prompt}"+"\n"
+    if nombreServidor == nombre:
+        contexto += f"{nombreServidor}:{prompt}"+"\n"
+    else:
+        contexto += f"{nombreServidor}({nombre}):{prompt}"+"\n"
+
     contexto += f"Tu:{respuesta}"+"\n"
 
     if len(contexto) > limiteContexto:

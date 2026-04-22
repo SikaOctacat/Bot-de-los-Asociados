@@ -7,16 +7,17 @@ async def archivo(payload):
 
     canal = bot.get_channel(payload.channel_id)
     mensaje = await canal.fetch_message(payload.message_id)
-    usuario = bot.get_user(payload.user_id) or await bot.fetch_user(payload.user_id)
+    autor = mensaje.guild.get_member(mensaje.author.id) or await mensaje.guild.fetch_member(mensaje.author.id)
+    miembro = bot.get_user(payload.user_id) or await bot.fetch_user(payload.user_id)
 
-    if usuario.bot:
+    if miembro.bot:
         return
     
     if str(payload.emoji) == "❌":
-        if (usuario.id in mensajesMD) and (mensaje.id in mensajesMD[usuario.id]):
-            for borrar in range(len(mensajesMD[usuario.id][mensaje.id])):
-                await mensajesMD[usuario.id][mensaje.id][borrar].delete()
-            del mensajesMD[usuario.id][mensaje.id]
+        if (miembro.id in mensajesMD) and (mensaje.id in mensajesMD[miembro.id]):
+            for borrar in range(len(mensajesMD[miembro.id][mensaje.id])):
+                await mensajesMD[miembro.id][mensaje.id][borrar].delete()
+            del mensajesMD[miembro.id][mensaje.id]
         return
     elif str(payload.emoji) != "⭐":
         return
@@ -27,32 +28,37 @@ async def archivo(payload):
 
         listaArchivos.append(discord.File(io.BytesIO(bytes),filename=archivo.filename))
 
+    #Esto evita la redudancia del apodo del usuario con su nombre global
+    nombreGlobal = ""
+    if autor.display_name != autor.global_name:
+        nombreGlobal = autor.global_name + ","    
+
     #Esta cosa es para que la hora se ajusta la del usuaro y tenga un formato lindo
     fechaFormato = f"<t:{int(mensaje.created_at.timestamp())}:f>"
 
-    descripcion = f"> Publicado por: **{mensaje.author.display_name} ({mensaje.author.name})**\n> Canal: **{mensaje.channel.name}**\n> Servidor: **{mensaje.guild.name}**\n> Fecha y hora: **{fechaFormato}**\n> Mensaje original: **{mensaje.jump_url}**"
+    descripcion = f"> Publicado por: **{autor.display_name} ({nombreGlobal}{autor.name})**\n> Canal: **{mensaje.channel.name}**\n> Servidor: **{mensaje.guild.name}**\n> Fecha y hora: **{fechaFormato}**\n> Mensaje original: **{mensaje.jump_url}**"
 
 
     try:   
         directorio = os.path.dirname(__file__)
         indicacion = os.path.join(directorio,"..","imagenes","indicaciones.png")
 
-        if usuario.id not in usuariosConMD:
-            await usuario.send('Recciona con una "❌" para borrar cualquiera de los archivos\n\nTambien puedes puedes filtras las imagenes por nombre u usuario usando el buscador nativo de discord\n------------------------------------------------')
-            usuariosConMD.append(usuario.id)
+        if miembro.id not in usuariosConMD:
+            await miembro.send('Recciona con una "❌" para borrar cualquiera de los archivos\n\nTambien puedes puedes filtras las imagenes por nombre u usuario usando el buscador nativo de discord\n------------------------------------------------')
+            usuariosConMD.append(miembro.id)
 
-        mensajeDescripcion = await usuario.send(descripcion)
+        mensajeDescripcion = await miembro.send(descripcion)
         mensajeResultado = await mensajeDescripcion.reply(mensaje.content,files=listaArchivos)
 
-        if not (usuario.id in mensajesMD):
-            mensajesMD[usuario.id] = {}
+        if not (miembro.id in mensajesMD):
+            mensajesMD[miembro.id] = {}
 
         
-        mensajesMD[usuario.id][mensajeResultado.id] = [mensajeResultado,mensajeDescripcion]
-        recortarRegistro(mensajesMD[usuario.id][mensajeResultado.id],exceso=1)
+        mensajesMD[miembro.id][mensajeResultado.id] = [mensajeResultado,mensajeDescripcion]
+        recortarRegistro(mensajesMD[miembro.id][mensajeResultado.id],exceso=1)
 
     except:
-        instruccion = await canal.send(f'{usuario.mention} Para poder guardar los mensajes en tu MD debes tener configurado **en tu perfil** en la seccion de **Permisos de interacción** la opcion de **Mensajes directos** activa al menos para este servidor:',file=discord.File(indicacion))
+        instruccion = await canal.send(f'{miembro.mention} Para poder guardar los mensajes en tu MD debes tener configurado **en tu perfil** en la seccion de **Permisos de interacción** la opcion de **Mensajes directos** activa al menos para este servidor:',file=discord.File(indicacion))
 
         await asyncio.sleep(20)
 
