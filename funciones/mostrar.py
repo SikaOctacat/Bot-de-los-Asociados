@@ -23,7 +23,7 @@ async def rankingEstrellas(ctx):
     resultado = "**`"+"Usuario".rjust(anchoIzquierda)+"|"+"Top".center(anchoCentro)+"|"+"⭐`**\n"
     for i,usuario in enumerate(ranking,1):
 
-        nombre = str(usuario["usuario"]).rjust(anchoIzquierda)
+        nombre = str(usuario["usuario"]).replace(" ","").rjust(anchoIzquierda)
         i = str(i).center(anchoCentro)
         
         puntuacion = str(usuario["estrellas"])
