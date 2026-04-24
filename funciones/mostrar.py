@@ -9,7 +9,7 @@ async def rankingEstrellas(ctx):
         ctx.send("Todavia no hay nadie en el ranking ⭐")
         return
 
-    anchoIzquierda = max([len(str(x["usuario"])) for x in ranking])
+    anchoIzquierda = max([len(str(x["usuario"]).replace(" ","")) for x in ranking])
 
     if anchoIzquierda < len("Usuario"):
         anchoIzquierda = len("Usuario") 
@@ -23,7 +23,7 @@ async def rankingEstrellas(ctx):
     resultado = "**`"+"Usuario".rjust(anchoIzquierda)+"|"+"Top".center(anchoCentro)+"|"+"⭐`**\n"
     for i,usuario in enumerate(ranking,1):
 
-        nombre = str(usuario["usuario"]).replace(" ","").rjust(anchoIzquierda)
+        nombre = str(usuario["usuario"]).rjust(anchoIzquierda)
         i = str(i).center(anchoCentro)
         
         puntuacion = str(usuario["estrellas"])
