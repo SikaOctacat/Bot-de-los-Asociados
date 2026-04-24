@@ -13,14 +13,21 @@ from flask import Flask
 from threading import Thread
 from cohere import AsyncClient
 import io
+from pymongo import MongoClient
 
 load_dotenv()
 
 llave_IA = os.getenv("LLAVE_IA")
 co = AsyncClient(os.getenv("LLAVE_COHERE"))
 cliente = genai.Client(api_key=llave_IA)
+mongoCliente = MongoClient(os.getenv("mongoUri"))
 #Recuerda cambiar esto a DISCORD cuando no lo estes testeando
 llave_Discord = os.getenv("LLAVE_DISCORD")
+
+#Aca obtenemos la base de datos de mongo y la carpetas que nos interesan
+baseDatos = mongoCliente["proyecto_asociacion_db"]
+topEstrellas = baseDatos["top_estrellas"]
+
 
 # Vale, entonces esto le dice a Discord que por favor me deje leer los mensajes de los usarios por favorcito
 intents = discord.Intents.default()

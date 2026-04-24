@@ -1,27 +1,55 @@
 from funciones import *
 from .mensajes import filtrarMensajesPings
 
-async def archivo(payload):
+async def archivo(payload,quitar=False):
 
     listaArchivos = []
 
     canal = bot.get_channel(payload.channel_id)
     mensaje = await canal.fetch_message(payload.message_id)
-    autor = mensaje.guild.get_member(mensaje.author.id) or await mensaje.guild.fetch_member(mensaje.author.id)
-    miembro = bot.get_user(payload.user_id) or await bot.fetch_user(payload.user_id)
 
-    if miembro.bot:
+    #Con esto evito conflictos con los mensajes hechos en servers o en MD, los detalles se manejan mas adelante
+    if mensaje.guild == None:
+        autor = bot.get_user(mensaje.author.id) or await bot.fetch_user(mensaje.author.id)
+    else:
+        autor = mensaje.guild.get_member(mensaje.author.id) or await mensaje.guild.fetch_member(mensaje.author.id)
+
+    usuario = bot.get_user(payload.user_id) or await bot.fetch_user(payload.user_id)
+
+    if usuario.bot:
         return
     
     if str(payload.emoji) == "❌":
-        if (miembro.id in mensajesMD) and (mensaje.id in mensajesMD[miembro.id]):
-            for borrar in range(len(mensajesMD[miembro.id][mensaje.id])):
-                await mensajesMD[miembro.id][mensaje.id][borrar].delete()
-            del mensajesMD[miembro.id][mensaje.id]
+        if (usuario.id in mensajesMD) and (mensaje.id in mensajesMD[usuario.id]):
+            for borrar in range(len(mensajesMD[usuario.id][mensaje.id])):
+                await mensajesMD[usuario.id][mensaje.id][borrar].delete()
+            del mensajesMD[usuario.id][mensaje.id]
         return
-    elif str(payload.emoji) != "⭐":
+    elif str(payload.emoji) != "⭐" or mensaje.guild == None:
+        return
+    
+    #Dado el caso que se lo que quiera es quitar, esto maneja si que el usuario tenga al menos una estrella
+    if quitar:
+        if usuario.name != autor.name:
+            criterio = {"usuario":autor.name}
+            usuario_db = topEstrellas.find_one(criterio)
+
+            if usuario_db["estrellas"]  <= 1:
+                topEstrellas.delete_one(criterio)
+            else:
+                topEstrellas.update_one(
+                    criterio,
+                    {"$inc":{"estrellas":-1}}
+                )
         return
 
+    #Antes si quiera de enviar el documento al MD, actualizamos la base de datos... Por si acaso
+    if usuario.name != autor.name:
+        topEstrellas.update_one(
+            {"usuario":autor.name},
+            {"$inc":{"estrellas":1}},
+            upsert=True
+        )
 
     for archivo in mensaje.attachments:
         bytes = await archivo.read()
@@ -43,22 +71,22 @@ async def archivo(payload):
         directorio = os.path.dirname(__file__)
         indicacion = os.path.join(directorio,"..","imagenes","indicaciones.png")
 
-        if miembro.id not in usuariosConMD:
-            await miembro.send('Recciona con una "❌" para borrar cualquiera de los archivos\n\nTambien puedes puedes filtras las imagenes por nombre u usuario usando el buscador nativo de discord\n------------------------------------------------')
-            usuariosConMD.append(miembro.id)
+        if usuario.id not in usuariosConMD:
+            await usuario.send('Recciona con una "❌" para borrar cualquiera de los archivos\n\nTambien puedes puedes filtras las imagenes por nombre u usuario usando el buscador nativo de discord\n------------------------------------------------')
+            usuariosConMD.append(usuario.id)
 
-        mensajeDescripcion = await miembro.send(descripcion)
+        mensajeDescripcion = await usuario.send(descripcion)
         mensajeResultado = await mensajeDescripcion.reply(mensaje.content,files=listaArchivos)
 
-        if not (miembro.id in mensajesMD):
-            mensajesMD[miembro.id] = {}
+        if not (usuario.id in mensajesMD):
+            mensajesMD[usuario.id] = {}
 
         
-        mensajesMD[miembro.id][mensajeResultado.id] = [mensajeResultado,mensajeDescripcion]
-        recortarRegistro(mensajesMD[miembro.id][mensajeResultado.id],exceso=1)
+        mensajesMD[usuario.id][mensajeResultado.id] = [mensajeResultado,mensajeDescripcion]
+        recortarRegistro(mensajesMD[usuario.id][mensajeResultado.id],exceso=1)
 
     except:
-        instruccion = await canal.send(f'{miembro.mention} Para poder guardar los mensajes en tu MD debes tener configurado **en tu perfil** en la seccion de **Permisos de interacción** la opcion de **Mensajes directos** activa al menos para este servidor:',file=discord.File(indicacion))
+        instruccion = await canal.send(f'{usuario.mention} Para poder guardar los mensajes en tu MD debes tener configurado **en tu perfil** en la seccion de **Permisos de interacción** la opcion de **Mensajes directos** activa al menos para este servidor:',file=discord.File(indicacion))
 
         await asyncio.sleep(20)
 

@@ -5,6 +5,7 @@ from funciones.mensajes import *
 from funciones.resumen import *
 from funciones.consulta import consultar
 from funciones.guardar import *
+from funciones.mostrar import rankingEstrellas
 from funciones import consulta
 
 
@@ -84,6 +85,8 @@ async def on_raw_reaction_remove(payload):
 
     await reaccionarMensajeEspejo(payload,borrar=True)
 
+    await archivo(payload,quitar=True)
+
 @bot.command()
 async def sync(ctx):
     if ctx.author.id == 612445390314274826:
@@ -139,6 +142,12 @@ async def on_comand(ctx):
         
 
     await ctx.reply("No tengo contexto todavia..."+marca)
+
+@tree.command(name="top_estrellas",description="Muestra el top de usuarios con mas estrellas del servidor")
+async def on_comand(interaction: discord.Interaction):
+    await interaction.response.defer()
+
+    await rankingEstrellas(interaction.followup)
 
 
 
