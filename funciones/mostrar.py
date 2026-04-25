@@ -39,5 +39,7 @@ async def rankingEstrellas(ctx):
         color=0xFFFF00
     )
 
+    embed.set_footer(text="Solo se suma si los mensajes poseen archivos o links")
+
     await ctx.send(embed=embed)
 

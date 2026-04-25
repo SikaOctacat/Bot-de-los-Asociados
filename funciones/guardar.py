@@ -4,6 +4,7 @@ from .mensajes import filtrarMensajesPings
 async def archivo(payload,quitar=False):
 
     listaArchivos = []
+    listaEmbeds = []
 
     canal = bot.get_channel(payload.channel_id)
     mensaje = await canal.fetch_message(payload.message_id)
@@ -29,38 +30,57 @@ async def archivo(payload,quitar=False):
         return
     elif str(payload.emoji) != "⭐" or mensaje.guild == None:
         return
-    
-    #Dado el caso que se lo que quiera es quitar, esto maneja si que el usuario tenga al menos una estrella
-    if quitar:
-        if usuario.name != autor.name:
-            criterio = {"usuario":autor.name}
-            usuario_db = topEstrellas.find_one(criterio)
 
-            if usuario_db["estrellas"]  <= 1:
-                topEstrellas.delete_one(criterio)
-            else:
-                topEstrellas.update_one(
-                    criterio,
-                    {"$inc":{"estrellas":-1}}
-                )
-        return
 
-    #Antes si quiera de enviar el documento al MD, actualizamos la base de datos... Por si acaso
-    if usuario.name != autor.name:
-        topEstrellas.update_one(
-            {"usuario":autor.name},
-            {"$inc":{"estrellas":1}},
-            upsert=True
-        )
-
+    #Aca se vefican los datos extras
     for archivo in mensaje.attachments:
         bytes = await archivo.read()
 
         listaArchivos.append(discord.File(io.BytesIO(bytes),filename=archivo.filename))
 
+    for embed in mensaje.embeds:
+        listaEmbeds.append(discord.Embed(
+            title=embed.title,
+            description=embed.description
+        ))
+
+    poseeLinks = bool(re.search(
+        r"https?://(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&//=]*)",
+        mensaje.content,
+        re.IGNORECASE
+    ))
+
+    #Antes si quiera de enviar el documento al MD, actualizamos la base de datos... Por si acaso
+    if (usuario.name != autor.name and not(usuario.bot)) and (listaArchivos != [] or poseeLinks):
+        if autor.bot and autor != bot.user:
+            pass
+        else:
+            #Dado el caso que se lo que quiera es quitar, esto maneja si que el usuario tenga al menos una estrella
+            if quitar:
+                criterio = {"usuario":autor.name}
+                usuario_db = topEstrellas.find_one(criterio)
+
+                if usuario_db["estrellas"]  <= 1:
+                    topEstrellas.delete_one(criterio)
+                else:
+                    topEstrellas.update_one(
+                        criterio,
+                        {"$inc":{"estrellas":-1}}
+                    )
+                return
+            
+            topEstrellas.update_one(
+                {"usuario":autor.name},
+                {"$inc":{"estrellas":1}},
+                upsert=True
+            )
+
+    if quitar:
+        return
+
     #Esto evita la redudancia del apodo del usuario con su nombre global
     nombreGlobal = ""
-    if autor.display_name != autor.global_name:
+    if autor.global_name and autor.display_name != autor.global_name:
         nombreGlobal = autor.global_name + ","    
 
     #Esta cosa es para que la hora se ajusta la del usuaro y tenga un formato lindo
@@ -78,7 +98,7 @@ async def archivo(payload,quitar=False):
             usuariosConMD.append(usuario.id)
 
         mensajeDescripcion = await usuario.send(descripcion)
-        mensajeResultado = await mensajeDescripcion.reply(mensaje.content,files=listaArchivos)
+        mensajeResultado = await mensajeDescripcion.reply(mensaje.content,files=listaArchivos,embeds=mensaje.embeds)
 
         if not (usuario.id in mensajesMD):
             mensajesMD[usuario.id] = {}
