@@ -5,7 +5,7 @@ from funciones.mensajes import *
 from funciones.resumen import *
 from funciones.consulta import consultar
 from funciones.guardar import *
-from funciones.mostrar import rankingEstrellas
+from funciones.mostrar import *
 from funciones import consulta
 
 
@@ -149,7 +149,33 @@ async def on_comand(interaction: discord.Interaction):
 
     await rankingEstrellas(interaction.followup)
 
+@bot.command(name="usuario_info")
+async def on_command(ctx,consulta=None):
+    if consulta == None:
+        return
 
+    await usuarioInfo(ctx,consulta)
+
+@tree.command(name="usuario_info",description="Observa información en la base de datos de ti mismo o de otro usuario")
+async def on_command(interaction:discord.Interaction, usuario: typing.Optional[discord.Member]=None):
+    await interaction.response.defer()
+
+    await usuarioInfo(interaction,usuario)
+
+@tree.command(name="sugerir_info",description="Sugiere información para modificar o agregar a tu ficha de usuario")
+async def on_command(interaction:discord.Interaction,texto:str):
+    await interaction.response.defer()
+
+    resultado = usuarios_info.update_one(
+        {"discriminador_discord": interaction.user.name},
+        {"$set": {"sugerencia":texto}},
+        upsert=False
+    )
+
+    if resultado.matched_count > 0:
+        await interaction.followup.send("Sugerencia subida con exito")
+    else:
+        await interaction.followup.send("No estas en la base de datos todavia")
 
 #Esto hace que Render no piense que mi bot se tomo vacaciones y lo siga obligando a trabajar por el resto de la eternidad!!!
 app = Flask('')

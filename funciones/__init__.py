@@ -13,6 +13,7 @@ from flask import Flask
 from threading import Thread
 from cohere import AsyncClient
 import io
+import typing
 from pymongo import MongoClient
 
 load_dotenv()
@@ -26,7 +27,7 @@ llave_Discord = os.getenv("LLAVE_DISCORD")
 
 #Aca obtenemos la base de datos de mongo y la carpetas que nos interesan
 baseDatos = mongoCliente["proyecto_asociacion_db"]
-topEstrellas = baseDatos["top_estrellas"]
+usuarios_info = baseDatos["usuarios_info"]
 
 
 # Vale, entonces esto le dice a Discord que por favor me deje leer los mensajes de los usarios por favorcito

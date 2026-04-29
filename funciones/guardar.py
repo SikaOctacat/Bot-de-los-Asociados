@@ -50,6 +50,19 @@ async def archivo(payload,quitar=False):
         re.IGNORECASE
     ))
 
+    estructura_base = {
+        "nombre": autor.name,
+        "primera_aparicion": "Sin determinar",
+        "aliases": [],
+        "frase": "Sin frase definida",
+        "descripcion": "Sin descripcion establecida",
+        "titulos": ["Miembro de la Asociación"],
+        "redes": {
+            "Discord": autor.name,
+        },
+        "validado": False
+    }
+
     #Antes si quiera de enviar el documento al MD, actualizamos la base de datos... Por si acaso
     if (usuario.name != autor.name and not(usuario.bot)) and (listaArchivos != [] or poseeLinks):
         if autor.bot and autor != bot.user:
@@ -57,21 +70,23 @@ async def archivo(payload,quitar=False):
         else:
             #Dado el caso que se lo que quiera es quitar, esto maneja si que el usuario tenga al menos una estrella
             if quitar:
-                criterio = {"usuario":autor.name}
-                usuario_db = topEstrellas.find_one(criterio)
+                criterio = {"discriminador_discord":autor.name}
+                usuario_db = usuarios_info.find_one(criterio)
 
-                if usuario_db["estrellas"]  <= 1:
-                    topEstrellas.delete_one(criterio)
-                else:
-                    topEstrellas.update_one(
+                if usuario_db["estrellas"]  > 0:
+                    usuarios_info.update_one(
                         criterio,
                         {"$inc":{"estrellas":-1}}
                     )
                 return
             
-            topEstrellas.update_one(
-                {"usuario":autor.name},
-                {"$inc":{"estrellas":1}},
+            usuarios_info.update_one(
+                {"discriminador_discord":autor.name},
+                {
+                    "$inc":{"estrellas":1},
+                    "$setOnInsert": estructura_base
+                },
+                
                 upsert=True
             )
 
