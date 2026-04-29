@@ -90,7 +90,7 @@ async def usuarioInfo(interaction,objetivo=None):
     resultado = f'**Primera aparición:** _{usuario["primera_aparicion"]}_\n**Aliases:** _{alias}_\n**Frase:** _{usuario["frase"].replace("'",'"')}_\n**Titulos:** _{titulo}_\n\n{usuario["descripcion"]} \n\n⭐:{usuario["estrellas"]} \n\n**Redes:** {redes}'
 
     try:
-        resultado += f'\n\n***El usuario sugirió:***\n "{usuario["sugerencia"]}"'
+        resultado += f'\n***El usuario sugirió:***\n "{usuario["sugerencia"]}"'
     except:
         pass
 
