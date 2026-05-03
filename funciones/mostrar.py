@@ -1,18 +1,37 @@
 from funciones import *
 
-async def rankingEstrellas(ctx):
-    cursor = usuarios_info.find().sort([("estrellas",-1)]).limit(15)
+paginaActual = 0
+botones = []
+
+for texto in ["Anterior","Siguiente"]:
+    boton = discord.ui.Button(
+        label= texto,
+        style= discord.ButtonStyle.primary,
+        custom_id= texto.lower()
+    )
+    botones.append(boton)
+
+async def rankingEstrellas(ctx=False):
+    global paginaActual,botones
+    ventana = 5
+    cursor = usuarios_info.find().sort([("estrellas",-1)])
 
     ranking = list(cursor)
 
-    if not ranking:
+    if not ranking and ctx:
         ctx.send("Todavia no hay nadie en el ranking ⭐")
         return
     
     nombres = [str(x["discriminador_discord"]).replace(" ","") for x in ranking]
     estrellas = [str(x["estrellas"]) for x in ranking]
 
-    anchoIzquierda = max([len(x) for x in nombres])
+    tope = ventana+paginaActual*ventana
+    if tope > len(nombres):
+        tope = len(nombres)
+
+    rango = range(paginaActual*ventana,tope)
+
+    anchoIzquierda = max([len(x) for x in nombres[rango.start:tope]])
 
     if anchoIzquierda < len("Usuario"):
         anchoIzquierda = len("Usuario") 
@@ -24,15 +43,16 @@ async def rankingEstrellas(ctx):
 
 
     resultado = "**`"+"Usuario".rjust(anchoIzquierda)+"|"+"Top".center(anchoCentro)+"|"+"⭐`**\n"
-    for i,(usuario,puntuacion) in enumerate(zip(nombres,estrellas),1):
+    for i in rango:
 
-        usuario = usuario.rjust(anchoIzquierda)
-        i = str(i).center(anchoCentro)
+        usuario = nombres[i].rjust(anchoIzquierda)
+        top = str(i+1).center(anchoCentro)
 
+        puntuacion = estrellas[i]
         if len(puntuacion) == 1:
             puntuacion += " "
 
-        resultado += f"**`{usuario}|{i}|{puntuacion}`**\n"
+        resultado += f"**`{usuario}|{top}|{puntuacion}`**\n"
 
     embed = discord.Embed(
         title="Top de estrellas 🏆",
@@ -42,7 +62,39 @@ async def rankingEstrellas(ctx):
 
     embed.set_footer(text="Solo se suma si los mensajes poseen archivos o links")
 
-    await ctx.send(embed=embed)
+    if not ctx:
+        return embed
+
+    async def cambiarPagina(interaction):
+            global paginaActual,botones
+
+            match interaction.data["custom_id"]:
+                case "siguiente": paginaActual += 1
+                case "anterior": paginaActual -= 1
+            
+            view = discord.ui.View()
+            for boton in botones:
+                if boton.label == "Anterior" and paginaActual < 1:
+                    continue
+
+                if boton.label == "Siguiente" and (paginaActual+1)*ventana > len(nombres):
+                    continue
+
+                boton.callback = cambiarPagina
+
+                view.add_item(boton)
+
+            embed =  await rankingEstrellas()
+            await interaction.response.edit_message(embed=embed,view=view)
+
+    view = discord.ui.View()
+
+    boton = botones[1]
+    boton.callback = cambiarPagina
+
+    view.add_item(boton)
+    
+    await ctx.send(embed=embed,view=view)
 
 async def usuarioInfo(interaction,objetivo=None):
 
