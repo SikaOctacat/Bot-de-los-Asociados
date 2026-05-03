@@ -13,7 +13,7 @@ for texto in ["Anterior","Siguiente"]:
 
 async def rankingEstrellas(ctx=False):
     global paginaActual,botones
-    ventana = 5
+    ventana = 10
     cursor = usuarios_info.find().sort([("estrellas",-1)])
 
     ranking = list(cursor)
