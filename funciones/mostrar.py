@@ -2,6 +2,7 @@ from funciones import *
 
 paginaActual = 0
 botones = []
+seleccion = "estrellas"
 
 for texto in ["Anterior","Siguiente"]:
     boton = discord.ui.Button(
@@ -11,19 +12,31 @@ for texto in ["Anterior","Siguiente"]:
     )
     botones.append(boton)
 
-async def rankingEstrellas(ctx=False):
-    global paginaActual,botones
+async def ranking(ctx=False,select="estrellas"):
+    global paginaActual,botones,seleccion
+
+    if select != seleccion:
+        seleccion = select
     ventana = 10
-    cursor = usuarios_info.find().sort([("estrellas",-1)])
 
-    ranking = list(cursor)
+    selectInfo = {
+        "estrellas": {"emoji":"⭐","color":0xFFFF00,"pie":"Solo se suma si los mensajes poseen archivos o links"},
+        "corazones": {"emoji":"❤️","color":0xFF0000},
+        "nivel": {"emoji":"🔝","color":0xC800FF},
+        "descontextualizaciones": {"emoji":"📸","color":0xCCCCCC}
+        
+    }
 
-    if not ranking and ctx:
-        ctx.send("Todavia no hay nadie en el ranking ⭐")
+    cursor = usuarios_info.find().sort([(f"estadisticas.{select}",-1)])
+
+    listaTop = list(cursor)
+
+    if not listaTop and ctx:
+        ctx.send(f"Todavia no hay nadie en el ranking {selectInfo[select]["emoji"]}")
         return
     
-    nombres = [str(x["discriminador_discord"]).replace(" ","") for x in ranking]
-    estrellas = [str(x["estrellas"]) for x in ranking]
+    nombres = [str(x["discriminador_discord"]).replace(" ","") for x in listaTop]
+    valores = [str(x["estadisticas"][select]) for x in listaTop]
 
     tope = ventana+paginaActual*ventana
     if tope > len(nombres):
@@ -36,37 +49,38 @@ async def rankingEstrellas(ctx=False):
     if anchoIzquierda < len("Usuario"):
         anchoIzquierda = len("Usuario") 
 
-    anchoCentro = len(str(len(ranking)))
+    anchoCentro = len(str(len(listaTop)))
 
     if anchoCentro < len("Top"):
         anchoCentro = len("Top") 
 
 
-    resultado = "**`"+"Usuario".rjust(anchoIzquierda)+"|"+"Top".center(anchoCentro)+"|"+"⭐`**\n"
+    resultado = "**`"+"Usuario".rjust(anchoIzquierda)+"|"+"Top".center(anchoCentro)+"|"+f"{selectInfo[select]["emoji"]}`**\n"
     for i in rango:
 
         usuario = nombres[i].rjust(anchoIzquierda)
         top = str(i+1).center(anchoCentro)
 
-        puntuacion = estrellas[i]
+        puntuacion = valores[i]
         if len(puntuacion) == 1:
             puntuacion += " "
 
         resultado += f"**`{usuario}|{top}|{puntuacion}`**\n"
 
     embed = discord.Embed(
-        title="Top de estrellas 🏆",
+        title=f"Top de {select} 🏆",
         description=resultado,
-        color=0xFFFF00
+        color=selectInfo[select]["color"]
     )
 
-    embed.set_footer(text="Solo se suma si los mensajes poseen archivos o links")
+    if "pie" in selectInfo[select]:
+        embed.set_footer(text=selectInfo[select]["pie"])
 
     if not ctx:
         return embed
 
     async def cambiarPagina(interaction):
-            global paginaActual,botones
+            global paginaActual,botones,seleccion
 
             match interaction.data["custom_id"]:
                 case "siguiente": paginaActual += 1
@@ -84,7 +98,7 @@ async def rankingEstrellas(ctx=False):
 
                 view.add_item(boton)
 
-            embed =  await rankingEstrellas()
+            embed =  await ranking(select=seleccion)
             await interaction.response.edit_message(embed=embed,view=view)
 
     view = discord.ui.View()
@@ -128,6 +142,7 @@ async def usuarioInfo(interaction,objetivo=None):
         usuario = usuario[0]
 
     alias = list(usuario["aliases"])
+
     if alias == []:
         alias = "Sin alias conocidos"
     else:
@@ -135,11 +150,32 @@ async def usuarioInfo(interaction,objetivo=None):
     
     titulo = ", ".join(list(usuario["titulos"]))
 
+    nivel = 0
+    xp = 0
+    estadisticas = "\n"
+    for elemento in usuario["estadisticas"].items():
+        if elemento[0] == "porcentaje":
+            estadisticas += f"* **{elemento[0]}**: _{elemento[1]}%_\n"
+            if nivel > 0: resta = nivelesXP[nivel-1] 
+            else: resta = 0
+
+            estadisticas += f"{xp-resta}/{nivelesXP[nivel]-resta}xp ({nivelesXP[nivel]-xp}xp restante para subir de nivel)\n"
+            estadisticas +=f"{crearCargador(elemento[1])}\n"
+        else:
+            estadisticas += f"* **{elemento[0]}**: _{elemento[1]}_\n"
+            match elemento[0]:
+                case "xp":
+                    xp = elemento[1]
+                case "nivel":
+                    nivel = elemento[1]
+
     redes = "\n"
     for elemento in usuario["redes"].items():
         redes += f"* **{elemento[0]}**: _{elemento[1]}_\n"
+    
+    
 
-    resultado = f'**Primera aparición:** _{usuario["primera_aparicion"]}_\n**Aliases:** _{alias}_\n**Frase:** _{usuario["frase"].replace("'",'"')}_\n**Titulos:** _{titulo}_\n\n{usuario["descripcion"]} \n\n⭐:{usuario["estrellas"]} \n\n**Redes:** {redes}'
+    resultado = f'**Primera aparición:** _{usuario["primera_aparicion"]}_\n**Aliases:** _{alias}_\n**Frase:** _{usuario["frase"].replace("'",'"')}_\n**Titulos:** _{titulo}_\n\n{usuario["descripcion"]} \n\n **Estadisticas:** {estadisticas} \n**Redes:** {redes}'
 
     try:
         resultado += f'\n***El usuario sugirió:***\n "{usuario["sugerencia"]}"'

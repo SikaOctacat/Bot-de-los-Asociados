@@ -6,6 +6,7 @@ from funciones.resumen import *
 from funciones.consulta import consultar
 from funciones.guardar import *
 from funciones.mostrar import *
+from funciones.determinar import *
 from funciones import consulta
 
 
@@ -27,6 +28,8 @@ async def on_message(message):
     if bot.user == message.author:
         if not(message.content.endswith(marca)):
             return
+        
+    await niveles(message)
 
     #Esta cosa lo que hace es crear la tarea de la traduccion, ya que podria ser interrumpida por otros elementos
     for conexion in conexiones.keys():
@@ -75,8 +78,7 @@ async def on_raw_reaction_add(payload):
 
     await reaccionarMensajeEspejo(payload)
 
-    await archivo(payload)
-    await fueraDeContexto(payload)
+    await gestionarReacciones(payload,suma=1)
 
 
 
@@ -84,8 +86,8 @@ async def on_raw_reaction_add(payload):
 async def on_raw_reaction_remove(payload):
 
     await reaccionarMensajeEspejo(payload,borrar=True)
+    await gestionarReacciones(payload,suma=-1)
 
-    await archivo(payload,quitar=True)
 
 @bot.command()
 async def sync(ctx):
@@ -143,11 +145,17 @@ async def on_comand(ctx):
 
     await ctx.reply("No tengo contexto todavia..."+marca)
 
-@tree.command(name="top_estrellas",description="Muestra el top de usuarios con mas estrellas del servidor")
-async def on_comand(interaction: discord.Interaction):
+@tree.command(name="top",description="Muestra el top de usuarios con mas estrellas del servidor")
+@app_commands.choices(categoria=[
+    app_commands.Choice(name="Estrellas",value="estrellas"),
+    app_commands.Choice(name="Corazones",value="corazones"),
+    app_commands.Choice(name="Nivel",value="nivel"),
+    app_commands.Choice(name="Descontextualizaciones",value="descontextualizaciones")
+])
+async def on_comand(interaction: discord.Interaction,categoria: app_commands.Choice[str]):
     await interaction.response.defer()
 
-    await rankingEstrellas(interaction.followup)
+    await ranking(interaction.followup,categoria.value)
 
 @bot.command(name="usuario_info")
 async def on_command(ctx,consulta=None):

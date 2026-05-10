@@ -3,6 +3,8 @@ from funciones import *
 async def buscarMensaje(messageID,buscar="mensaje",ID=False):
 
     for clave in canales:
+        if "historial" not in canales[clave]:
+            continue
         historial = canales[clave]["historial"]
         if not(isinstance(historial,dict)):
             continue
