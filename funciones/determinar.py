@@ -13,6 +13,9 @@ async def niveles(message):
     usuarios_info.update_one(criterio,
                             {"$inc":{"estadisticas.xp":len(message.content)}})
     
+    usuarios_info.update_one(criterio,
+                            {"$inc":{"estadisticas.mensajes":1}})
+    
     usuario = usuarios_info.find_one(criterio)
 
     nivel = usuario["estadisticas"]["nivel"]
