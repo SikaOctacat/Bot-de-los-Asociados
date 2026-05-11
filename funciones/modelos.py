@@ -1,5 +1,5 @@
 from google import genai
-from funciones import cliente
+from __init__ import cliente
 
 print("Modelos disponibles para tu clave:")
 for model in cliente.models.list():

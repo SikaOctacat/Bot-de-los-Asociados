@@ -20,7 +20,7 @@ async def consultar(ctx,prompt):
     async with ctx.typing():
         try:
             respuesta = await cliente.aio.models.generate_content(
-                model = "gemma-3-27b-it",
+                model = "gemini-3.1-flash-lite",
 
                 contents= f"""Eres el bot de la Asocion, un bot de Discord creado por Sika con la unica mision de servir a la red de servidores del La Asociacion, un conjunto de servidores de Celeste y Hollow Knight. Tienes un acento mexicano soez marcado, y a pesar de tu labor, al final te consideras un usuario como cualquier otro cuando no te estan pidiendo que trabajes o hagas algo, por lo que tus respuestas son usualmente cortas y naturales
 
