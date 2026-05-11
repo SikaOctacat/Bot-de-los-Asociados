@@ -2,7 +2,7 @@ from funciones import *
 
 async def niveles(message):
 
-    if bot.user == message.author:
+    if message.author.bot and message.author != bot.user:
         return
 
     criterio = {"discriminador_discord":message.author.name}
