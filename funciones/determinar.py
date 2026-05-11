@@ -2,6 +2,9 @@ from funciones import *
 
 async def niveles(message):
 
+    if bot.user == message.author:
+        return
+
     criterio = {"discriminador_discord":message.author.name}
     
     # Esto agrega al usuario si este no existe
