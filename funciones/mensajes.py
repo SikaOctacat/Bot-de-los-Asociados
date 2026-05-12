@@ -39,6 +39,9 @@ async def editarMensajeEspejo(before, after):
 
     #Si no esta en nuestro registro, no lo tomes en cuenta para editar de vuelta
     for valor in canales.values():
+        if "historial" not in valor:
+            continue
+
         if before.id in valor["historial"]:
             #Esto obtiene el objeto con los datos necesarios del canal para poder saber que hacer exacmente
             config = canales[await buscarMensaje(after.id,buscar="canal")]
