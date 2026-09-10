@@ -124,13 +124,16 @@ async def ban_global(ctx, usuario: discord.User,*,razon: str="No se dio una razo
     if not(ctx.author.id == 612445390314274826):
         return
 
+    servidoresLista = ""
     for guild in bot.guilds:
         try:
             await guild.ban(usuario,reason=razon)
+            servidoresLista += f"{guild.name}, "
+
         except (discord.Forbidden, discord.HTTPException):
             continue
         
-    await ctx.send(f"El usuario **{usuario.name}** ha sido baneado de toda la Asociación.\n\nRazon: *{razon}*")
+    await ctx.send(f"El usuario **{usuario.name}** ha sido baneado de los servidores {servidoresLista}\n\nRazon: *{razon}*")
 
 # Manejo de error específico si la ID o mención no se encuentra
 @ban_global.error
