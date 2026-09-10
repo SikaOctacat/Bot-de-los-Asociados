@@ -109,6 +109,37 @@ async def on_comand(ctx):
         servidores += f"\nNombre: {guild.name}\nID: {guild.id}\n"
     await ctx.reply(servidores)
 
+@bot.command(name="ban")
+async def on_comand(ctx, usuario: discord.User,*,razon: str="No se dio una razon"):
+
+    if not(ctx.author.id == 612445390314274826):
+        return
+
+    await usuario.ban(reason=razon)
+    await ctx.send(f"El usuario **{usuario.name}** ha sido baneado.\n\nRazon: *{razon}*")
+
+@bot.command(name="banGlobal")
+async def ban_global(ctx, usuario: discord.User,*,razon: str="No se dio una razon"):
+
+    if not(ctx.author.id == 612445390314274826):
+        return
+
+    for guild in bot.guilds:
+        try:
+            await guild.ban(usuario,reason=razon)
+        except (discord.Forbidden, discord.HTTPException):
+            continue
+        
+    await ctx.send(f"El usuario **{usuario.name}** ha sido baneado de toda la Asociación.\n\nRazon: *{razon}*")
+
+# Manejo de error específico si la ID o mención no se encuentra
+@ban_global.error
+async def ban_global_error(ctx, error):
+    if isinstance(error, commands.UserNotFound):
+        await ctx.send("No se encontró ningún usuario con esa ID o mención.")
+    elif isinstance(error, commands.MissingRequiredArgument):
+        await ctx.send("Debes proporcionar una mención o una ID válida.")
+
 
 @bot.command(name="pregunta")
 async def on_comand(ctx,*,pregunta):
