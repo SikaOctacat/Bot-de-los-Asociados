@@ -102,6 +102,13 @@ async def sync(ctx):
     else:   
         await ctx.send("Quien sos vos? LOL, conseguite una vida pibe, no tienes los permisos")
 
+@bot.command(name="servers")
+async def on_comand(ctx):
+    servidores = "Lista de sevidores\n"
+    for guild in bot.guilds:
+        servidores += f"\nNombre: {guild.name}\nID: {guild.id}\n"
+    await ctx.reply(servidores)
+
 
 @bot.command(name="pregunta")
 async def on_comand(ctx,*,pregunta):
