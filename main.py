@@ -110,7 +110,7 @@ async def on_comand(ctx):
     await ctx.reply(servidores)
 
 @bot.command(name="ban")
-async def on_comand(ctx, usuario: discord.User,*,razon: str="No se dio una razon"):
+async def on_comand(ctx, usuario: discord.Member,*,razon: str="No se dio una razon"):
 
     if not(ctx.author.id == 612445390314274826):
         return
