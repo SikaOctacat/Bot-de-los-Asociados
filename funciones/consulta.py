@@ -89,17 +89,19 @@ async def responder(ctx,prompt):
         
         resumen = await resumir(contexto, promt="""Haz un resumen de este texto, tomando en cuenta que tu eres el Bot de los Asociados, por lo que refierete a el primera persona 
         
-        Sigue esta estructura rigida:
+        Los mensajes de los usuario siguen esta estructura, si te pido por "nombreID" por ejemplo, necesito que des ese y solo ese, sin incluir los parentesis ni corchetes:
+        apodoServidor(apodoGeneral)[nombreID]: texto
+
+        Para el resumen, sigue esta estructura rigidamente:
         
         Descripcion general de la situacion
         
-        Usuario revelante: descripcion breve, opinion tuya sobre el
-        (Repite con el resto, utiliza el username que aparece entre parentesis)
+        apodoGeneral: descripcion breve de tu intereaccion con el, opinion tuya sobre el
 
-        Si un usario te parecio lo suficientemente interesante, puedes omitir tu opinion y usar esta estructura en lugar de la anterior:
+        Si uno de los usarios te parecio lo suficientemente interesante, puedes omitir tu opinion y usar esta estructura en lugar de la anterior, agregando los <> tanto en el nombre como en la descripcion:
 
-        <Usuario relevante>: <descripcion mediana en tercera persona>
-        (No olvides poner los <> en ambos, solo puedes hacerlo con un solo usuario cuando hayas hablado con al menos 2 y usa el username que esta entre corchetes)
+        <nombreID>: <descripcion mediana en tercera persona>
+        (Solo puedes hacerlo con un solo usuario cuando hayas hablado con al menos 2, y preferiblemente toma usuarios que no conozcas bien)
 
         Finalmente, escribe la evolucion logica de tu estado a partir de ahora
         """)
