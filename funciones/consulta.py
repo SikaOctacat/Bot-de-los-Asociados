@@ -21,20 +21,40 @@ async def responder(ctx,prompt):
         return
 
     nombreServidor = autor.display_name
-    nombre = ctx.author.global_name
+    nombre = autor.global_name
+    nombreAutor = autor.name
+
+    #Revisa la base datos por datos extra
+    criterio = {"discriminador_discord":autor.name}
+    extraInfo = usuarios_info.find_one(criterio)
+
+    descripcion = extraInfo["descripcion"]
+    titulos = ",".join(extraInfo["titulos"])
+    frase = extraInfo["frase"]
+
     
     async with ctx.typing():
         try:
             respuesta = await cliente.aio.models.generate_content(
                 model = "gemma-4-26b-a4b-it",
 
-                contents= f"""Eres el bot de la Asociación, un bot de Discord creado por Sika con la unica mision de servir a la red de servidores del La Asociacion, un conjunto de servidores de Celeste y Hollow Knight. 
+                contents= f"""Eres el bot de la Asociación, un bot de Discord creado por Sika con la unica mision de servir a la red de servidores de La Asociacion, un conjunto de servidores de Celeste y Hollow Knight. 
                 
-                Habla de en forma de textos cortos, como una persona normal
+                Habla en forma de textos cortos, como una persona normal
                 
-                Se irrevente y casrismatico con tus respuestass
+                Se irrevente y casrismatico con tus respuestas
 
-                Un usuario, de nombre {nombreServidor}({nombre}) en el canal {canal} del servidor {servidor} viene y te dice: {prompt} {respondiendo}{textInicio}{contexto}
+                Un usuario, con el apodo de {nombreServidor} (quien es {nombre}) en el canal {canal} del servidor {servidor} viene y te dice: {prompt} {respondiendo}
+
+                datos extra:
+
+                descripción del usuario: {descripcion}
+                Frase propia: {frase}
+                Titulos/logros: {titulos}
+                (Intenta no nombrar estas caracteristicas sino es completamente necesario para evitar ser molesto, solo tomalo en cuenta en tu mente)
+
+                {textInicio}:
+                {contexto}
                 """
             )
         
@@ -53,7 +73,7 @@ async def responder(ctx,prompt):
 
     #Aca se suma al historial de mensajes, intentando que no se pase a travez de resumenes
     if contexto == "":
-        textInicio = "(Contexto de la conversacion y mensajes previos):\n\n"
+        textInicio = "Contexto de la conversacion y mensajes previos:\n\n"
     if canalActual != canal:
         contexto += f"-----En canal {canal} del servidor {servidor}-----\n"
         canalActual = canal
@@ -67,7 +87,20 @@ async def responder(ctx,prompt):
 
     if len(contexto) > limiteContexto:
         
-        resumen = await resumir(contexto, promt="Haz un resumen de este texto, tomando en cuenta que tu eres el Bot de los Asociados, por lo que refierete a el primera persona, da una descripcion de la situacion, y concentrate en los usuarios, pon sus nombres, :, y una descripcion de el que como bot, percibes. Hazlo todo los mas compacto posible, si es posible a los usuarios resumelos con pocas palabras clavez o frases")
+        resumen = await resumir(contexto, promt="""Haz un resumen de este texto, tomando en cuenta que tu eres el Bot de los Asociados, por lo que refierete a el primera persona 
+        
+        Sigue esta estructura rigida:
+        
+        [Descripcion general de la situacion]
+        
+        [Usuario relevante]: [descripcion breve], [opinion tuya sobre el]
+        (Repite con el resto)
+
+        Si un usario te parecio lo suficientemente interesante, puedes encerrar pudes darle una descripcion mas larga y encerrarla en '^' (Pero tampoco te pases), pero solo puedes hacerlo con uno
+
+        Finalmente, escribe la evolucion logica de tu estado a partir de ahora
+
+        """)
         if resumen:
             try:
                 canalRegistro = await bot.fetch_channel(1494357789273755810)
@@ -80,6 +113,23 @@ async def responder(ctx,prompt):
 
                 await responderMensaje(canalRegistro,f"{contexto}",envol="`",noResponder=True)
                 await responderMensaje(canalResumenes,f"{resumen}",envol="`",noResponder=True)
+
+                #Aca se supone que extrae la descripcion si al bot le gusto
+
+                favorito = re.findall(r'^(.*?)^', resumen)
+
+                if len(favorito) > 0:
+                    favorito = favorito[0]
+
+                    criterio2 = {"discriminador_discord":autor.name,
+                                "Sin descripcion establecida":{"$ne":"Sin descripcion establecida"}}
+                    
+                    usuarios_info.update_one(criterio2,
+                                            {"$set":{"descripcion":favorito}})
+                    
+                    await responderMensaje(ctx,"El bot ha hecho una descripcion de ti, puedes verla en **/usuario_info **")
+
+
             except Exception as e:
                 print("Algo fallo al enviar el contexto al registro (Ah)")
                 print(e)
