@@ -254,13 +254,13 @@ async def responderMensaje(ctx,respuesta,limite=2000,envol="",noResponder=False)
     allowed_mentions = discord.AllowedMentions(everyone=False, roles=False, users=True)
 
     if len(respuesta) > limite:
-            parrafos = respuesta.split("\n\n")
+            parrafos = respuesta.split("\n")
 
             puntero = 0
-
             while puntero < len(parrafos) -1:
-                if len(parrafos[puntero] + parrafos[puntero+1]) <= limite:
-                    parrafos[puntero] += "\n\n" + parrafos[puntero+1]
+
+                if len(parrafos[puntero]+"\n"+parrafos[puntero+1]) <= limite:
+                    parrafos[puntero] += "\n" + parrafos[puntero+1]
                     parrafos.pop(puntero+1)
                 else:
                     puntero += 1
