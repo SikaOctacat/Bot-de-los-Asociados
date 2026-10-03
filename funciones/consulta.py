@@ -79,9 +79,9 @@ async def responder(ctx,prompt):
         canalActual = canal
 
     if nombreServidor == nombre:
-        contexto += f"{nombreServidor}:{prompt}"+"\n"
+        contexto += f"{nombreServidor}[{nombreAutor}]:{prompt}"+"\n"
     else:
-        contexto += f"{nombreServidor}({nombre}):{prompt}"+"\n"
+        contexto += f"{nombreServidor}({nombre})[{nombreAutor}]:{prompt}"+"\n"
 
     contexto += f"Tu:{respuesta}"+"\n"
 
@@ -91,15 +91,17 @@ async def responder(ctx,prompt):
         
         Sigue esta estructura rigida:
         
-        [Descripcion general de la situacion]
+        Descripcion general de la situacion
         
-        [Usuario relevante]: [descripcion breve], [opinion tuya sobre el]
-        (Repite con el resto)
+        Usuario revelante: descripcion breve, opinion tuya sobre el
+        (Repite con el resto, utiliza el username que aparece entre parentesis)
 
-        Si un usario te parecio lo suficientemente interesante, puedes encerrar pudes darle una descripcion mas larga y encerrarla en '^' (Pero tampoco te pases), pero solo puedes hacerlo con uno
+        Si un usario te parecio lo suficientemente interesante, puedes omitir tu opinion y usar esta estructura en lugar de la anterior:
+
+        Usuario relevante: <descripcion mediana en tercera persona>
+        (No olvides poner los <>, solo puedes hacerlo con un solo usuario cuando hayas hablado con al menos 2 y usa el username que esta entre corchetes)
 
         Finalmente, escribe la evolucion logica de tu estado a partir de ahora
-
         """)
         if resumen:
             try:
@@ -115,19 +117,18 @@ async def responder(ctx,prompt):
                 await responderMensaje(canalResumenes,f"{resumen}",envol="`",noResponder=True)
 
                 #Aca se supone que extrae la descripcion si al bot le gusto
-
-                favorito = re.findall(r'^(.*?)^', resumen)
-
+                favorito = re.findall(r'(?<=<)[^>]+(?=>)', resumen)
                 if len(favorito) > 0:
                     favorito = favorito[0]
 
                     criterio2 = {"discriminador_discord":autor.name,
                                 "descripcion":"Sin descripcion establecida"}
                     
-                    usuarios_info.update_one(criterio2,
+                    resolucion = usuarios_info.update_one(criterio2,
                                             {"$set":{"descripcion":favorito}})
-                    
-                    await responderMensaje(ctx,"El bot ha hecho una descripcion de ti, puedes verla en **/usuario_info **")
+
+                    if resolucion.matched_count > 0:
+                        await responderMensaje(ctx,"El bot ha hecho una descripcion de ti, puedes verla en **/usuario_info **")
 
 
             except Exception as e:
