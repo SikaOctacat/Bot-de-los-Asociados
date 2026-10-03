@@ -98,8 +98,8 @@ async def responder(ctx,prompt):
 
         Si un usario te parecio lo suficientemente interesante, puedes omitir tu opinion y usar esta estructura en lugar de la anterior:
 
-        Usuario relevante: <descripcion mediana en tercera persona>
-        (No olvides poner los <>, solo puedes hacerlo con un solo usuario cuando hayas hablado con al menos 2 y usa el username que esta entre corchetes)
+        <Usuario relevante>: <descripcion mediana en tercera persona>
+        (No olvides poner los <> en ambos, solo puedes hacerlo con un solo usuario cuando hayas hablado con al menos 2 y usa el username que esta entre corchetes)
 
         Finalmente, escribe la evolucion logica de tu estado a partir de ahora
         """)
@@ -119,16 +119,17 @@ async def responder(ctx,prompt):
                 #Aca se supone que extrae la descripcion si al bot le gusto
                 favorito = re.findall(r'(?<=<)[^>]+(?=>)', resumen)
                 if len(favorito) > 0:
-                    favorito = favorito[0]
+                    favoritoNombre = favorito[0]
+                    favoritoDesc = favorito[1]
 
-                    criterio2 = {"discriminador_discord":autor.name,
+                    criterio2 = {"discriminador_discord":favoritoNombre,
                                 "descripcion":"Sin descripcion establecida"}
                     
                     resolucion = usuarios_info.update_one(criterio2,
-                                            {"$set":{"descripcion":favorito}})
+                                            {"$set":{"descripcion":favoritoDesc}})
 
                     if resolucion.matched_count > 0:
-                        await responderMensaje(ctx,"El bot ha hecho una descripcion de ti, puedes verla en **/usuario_info **")
+                        await responderMensaje(ctx,f"El bot ha escrito una descripcion {favoritoNombre}, puedes verla en **/usuario_info **",noResponder=True)
 
 
             except Exception as e:
