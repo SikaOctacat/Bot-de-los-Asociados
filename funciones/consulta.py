@@ -122,7 +122,7 @@ async def responder(ctx,prompt):
                     favorito = favorito[0]
 
                     criterio2 = {"discriminador_discord":autor.name,
-                                "Sin descripcion establecida":{"$ne":"Sin descripcion establecida"}}
+                                "descripcion":"Sin descripcion establecida"}
                     
                     usuarios_info.update_one(criterio2,
                                             {"$set":{"descripcion":favorito}})
