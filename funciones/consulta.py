@@ -92,16 +92,15 @@ async def responder(ctx,prompt):
         Los mensajes de los usuario siguen esta estructura, si te pido por "nombreID" por ejemplo, necesito que des ese y solo ese, sin incluir los parentesis ni corchetes:
         apodoServidor(apodoGeneral)[nombreID]: texto
 
-        Para el resumen, sigue esta estructura rigidamente:
-        
-        Descripcion general de la situacion
-        
-        apodoGeneral: descripcion breve de tu intereaccion con el, opinion tuya sobre el
+        Por ejemplo, si quieres guardar informacion del usuario Carlos(Carlitos)[Carlos0003], tomas su apodoGeneral y le haces una descripcion asi:
 
-        Si uno de los usarios te parecio lo suficientemente interesante, puedes omitir tu opinion y usar esta estructura en lugar de la anterior, agregando los <> tanto en el nombre como en la descripcion:
+        Carlitos:Me lleve bien con a pesar de ser medio tontito
 
-        <nombreID>: <descripcion mediana en tercera persona>
-        (Solo puedes hacerlo con un solo usuario cuando hayas hablado con al menos 2, y preferiblemente toma usuarios que no conozcas bien)
+        Si por otra parte, uno de los usuarios te ha llamado la atencion particularme, pasas usar su nombreID y haces sus descripcion un poco mas larga en tercera persona, ademas envolviendo todo en en <>. Manteniendo al Carlos de ejemplo:
+
+        <Carlos0003:Carlos es una persona algo tontorrana pero muy divertida a la hora de interactuar conmigo y con otras personas>
+
+        (Solo puedes hacerlo con un solo usuario cuando hayas hablado con al menos 2, y preferiblemente toma usuarios que no conozcas bien, ademas debe estar todo pegado, en ambos casos, no pongas espacio despues del : por ejemplo)
 
         Finalmente, escribe la evolucion logica de tu estado a partir de ahora
         """)
@@ -118,26 +117,26 @@ async def responder(ctx,prompt):
                 await responderMensaje(canalRegistro,f"{contexto}",envol="`",noResponder=True)
                 await responderMensaje(canalResumenes,f"{resumen}",envol="`",noResponder=True)
 
-                #Aca se supone que extrae la descripcion si al bot le gusto
-                favorito = re.findall(r'(?<=<)[^>]+(?=>)', resumen)
-                if len(favorito) > 0:
-                    favoritoNombre = favorito[0]
-                    favoritoDesc = favorito[1]
-
-                    criterio2 = {"discriminador_discord":favoritoNombre,
-                                "descripcion":"Sin descripcion establecida"}
-                    
-                    resolucion = usuarios_info.update_one(criterio2,
-                                            {"$set":{"descripcion":favoritoDesc}})
-
-                    if resolucion.matched_count > 0:
-                        await responderMensaje(ctx,f"El bot ha escrito una descripcion {favoritoNombre}, puedes verla en **/usuario_info **",noResponder=True)
-
-
             except Exception as e:
                 print("Algo fallo al enviar el contexto al registro (Ah)")
                 print(e)
             contexto = resumen + "\n\n"
+
+            #Aca se supone que extrae la descripcion si al bot le gusto
+            favorito = re.findall(r'(?<=<)[^>]+(?=>)', resumen)
+            if len(favorito) > 0:
+                favorito = favorito[0].split(":")
+                favoritoNombre = favorito[0]
+                favoritoDesc = favorito[1]
+        
+                criterio2 = {"discriminador_discord":favoritoNombre,
+                            "descripcion":"Sin descripcion establecida"}
+        
+                resolucion = usuarios_info.update_one(criterio2,
+                                        {"$set":{"descripcion":favoritoDesc}})
+        
+                if resolucion.matched_count > 0:
+                    await responderMensaje(ctx,f"El bot ha escrito una descripcion <@{favoritoNombre}>, puedes verla en **/usuario_info**",noResponder=True)
 
         if len(contexto) > limiteContexto:
             corte = contexto.find("\n",-limiteContexto)
