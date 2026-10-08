@@ -100,8 +100,7 @@ async def responder(ctx,prompt):
 
         <Carlos0003:Carlos es una persona algo tontorrana pero muy divertida a la hora de interactuar conmigo y con otras personas>
 
-        (Solo puedes hacerlo con un solo usuario cuando hayas hablado con al menos 2, y preferiblemente toma usuarios que no conozcas bien, ademas debe estar todo pegado, en ambos casos, no pongas espacio despues del : por ejemplo)
-
+        (Solo puedes hacerlo con un solo usuario cuando hayas hablado con al menos 2, y preferiblemente toma usuarios que no conozcas bien)
         Finalmente, escribe la evolucion logica de tu estado a partir de ahora
         """)
         if resumen:
@@ -127,7 +126,7 @@ async def responder(ctx,prompt):
             if len(favorito) > 0:
                 favorito = favorito[0].split(":")
                 favoritoNombre = favorito[0]
-                favoritoDesc = favorito[1]
+                favoritoDesc = favorito[1].strip()
         
                 criterio2 = {"discriminador_discord":favoritoNombre,
                             "descripcion":"Sin descripcion establecida"}
