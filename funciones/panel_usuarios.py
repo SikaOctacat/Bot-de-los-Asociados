@@ -12,7 +12,7 @@ class PanelUsuariosTkinter(tk.Tk):
         self.minsize(900, 600)
 
         # Configuración de Paleta de Colores Dark Mode
-        self.COLOR_BG = "#1e1e2e"          # Fondo principal
+        self.COLOR_BG = "#1e1e2e"         # Fondo principal
         self.COLOR_PANEL = "#2b2b3b"       # Fondo de paneles/tarjetas
         self.COLOR_ACCENT = "#5865f2"      # Color de acento (Azul Discord / Primario)
         self.COLOR_TEXT = "#ffffff"        # Texto blanco
@@ -24,6 +24,7 @@ class PanelUsuariosTkinter(tk.Tk):
         self.configure(bg=self.COLOR_BG)
 
         self.usuario_actual_id = None
+        self.modo_creacion = False         # Controla si estamos creando un usuario nuevo
         self.entries_cache = {}
         self.redes_frame = None
         self.redes_entries = {}
@@ -48,6 +49,15 @@ class PanelUsuariosTkinter(tk.Tk):
         )
         lbl_title_left.pack(anchor="w", pady=(0, 5))
 
+        # --- BOTÓN NUEVO USUARIO ---
+        btn_nuevo = tk.Button(
+            left_panel, text="➕ Nuevo Usuario", font=("Segoe UI", 10, "bold"),
+            bg=self.COLOR_ACCENT, fg=self.COLOR_TEXT, activebackground="#4752c4",
+            activeforeground=self.COLOR_TEXT, bd=0, pady=6, cursor="hand2",
+            command=self.preparar_nuevo_usuario
+        )
+        btn_nuevo.pack(fill="x", pady=(0, 10))
+
         # --- BUSCADOR ---
         search_frame = tk.Frame(left_panel, bg=self.COLOR_PANEL)
         search_frame.pack(fill="x", pady=(0, 10))
@@ -59,7 +69,6 @@ class PanelUsuariosTkinter(tk.Tk):
         lbl_search_icon.pack(side="left", padx=(0, 5))
 
         self.var_busqueda = tk.StringVar()
-        # Escuchar cambios en la barra de búsqueda para filtrar en tiempo real
         self.var_busqueda.trace_add("write", lambda *args: self.cargar_lista_usuarios())
 
         self.ent_busqueda = tk.Entry(
@@ -114,7 +123,6 @@ class PanelUsuariosTkinter(tk.Tk):
         style = ttk.Style(self)
         style.theme_use("clam")
 
-        # Pestañas Notebook
         style.configure("TNotebook", background=self.COLOR_PANEL, borderwidth=0)
         style.configure("TNotebook.Tab", background=self.COLOR_BG, foreground=self.COLOR_MUTED,
                         padding=[12, 6], font=("Segoe UI", 10, "bold"), borderwidth=0)
@@ -147,7 +155,7 @@ class PanelUsuariosTkinter(tk.Tk):
         return scroll_frame
 
     def cargar_lista_usuarios(self):
-        """Obtiene y filtra los usuarios desde MongoDB según el término de búsqueda."""
+        """Obtiene y filtra los usuarios desde MongoDB según orden de 'num' y alfabético."""
         for child in self.scroll_registrados.winfo_children():
             child.destroy()
         for child in self.scroll_no_registrados.winfo_children():
@@ -156,12 +164,14 @@ class PanelUsuariosTkinter(tk.Tk):
         filtro = self.var_busqueda.get().strip().lower()
         usuarios = list(usuarios_info.find({}))
 
+        validados = []
+        no_validados = []
+
         for user in usuarios:
             nombre = str(user.get("nombre", "")).lower()
             discriminador = str(user.get("discriminador_discord", "")).lower()
             aliases = [str(a).lower() for a in user.get("aliases", [])]
 
-            # Si hay un término de búsqueda, comprobar si coincide con algún campo
             if filtro:
                 coincide = (
                     filtro in nombre or 
@@ -171,14 +181,38 @@ class PanelUsuariosTkinter(tk.Tk):
                 if not coincide:
                     continue
 
-            es_validado = user.get("validado", False)
-            parent = self.scroll_registrados if es_validado else self.scroll_no_registrados
+            if user.get("validado", False):
+                validados.append(user)
+            else:
+                no_validados.append(user)
 
+        # Ordenar usuarios validados:
+        # 1. Los que tienen 'num' (numéricos) ordenados de menor a mayor.
+        # 2. Los que no tienen 'num' ordenados alfabéticamente por nombre o discriminador.
+        def clave_orden_validados(u):
+            num = u.get("num")
+            nombre_sort = (u.get("nombre") or u.get("discriminador_discord") or "").lower()
+            if num is not None and isinstance(num, (int, float)):
+                return (0, num, nombre_sort)
+            else:
+                return (1, 0, nombre_sort)
+
+        validados.sort(key=clave_orden_validados)
+
+        # Ordenar no validados también alfabéticamente
+        no_validados.sort(key=lambda u: (u.get("nombre") or u.get("discriminador_discord") or "").lower())
+
+        # Renderizar Validados
+        for user in validados:
             nombre_mostrado = user.get("nombre") or user.get("discriminador_discord") or "Sin Nombre"
             doc_id = str(user["_id"])
+            num_val = user.get("num")
+
+            prefix = f"#{num_val} " if num_val is not None else ""
+            texto_boton = f" {prefix}👤 {nombre_mostrado}"
 
             btn = tk.Button(
-                parent, text=f"  👤 {nombre_mostrado}", anchor="w",
+                self.scroll_registrados, text=texto_boton, anchor="w",
                 font=("Segoe UI", 10), bg=self.COLOR_BG, fg=self.COLOR_TEXT,
                 activebackground=self.COLOR_ACCENT, activeforeground=self.COLOR_TEXT,
                 bd=0, pady=8, padx=10, cursor="hand2",
@@ -186,33 +220,61 @@ class PanelUsuariosTkinter(tk.Tk):
             )
             btn.pack(fill="x", pady=3)
 
-    def cargar_formulario_usuario(self, user_id):
-        """Construye el formulario editable para el usuario seleccionado."""
-        self.usuario_actual_id = user_id
+        # Renderizar No Validados
+        for user in no_validados:
+            nombre_mostrado = user.get("nombre") or user.get("discriminador_discord") or "Sin Nombre"
+            doc_id = str(user["_id"])
+
+            btn = tk.Button(
+                self.scroll_no_registrados, text=f"  👤 {nombre_mostrado}", anchor="w",
+                font=("Segoe UI", 10), bg=self.COLOR_BG, fg=self.COLOR_TEXT,
+                activebackground=self.COLOR_ACCENT, activeforeground=self.COLOR_TEXT,
+                bd=0, pady=8, padx=10, cursor="hand2",
+                command=lambda uid=doc_id: self.cargar_formulario_usuario(uid)
+            )
+            btn.pack(fill="x", pady=3)
+
+    def preparar_nuevo_usuario(self):
+        """Prepara el panel derecho con la estructura limpia para un usuario nuevo."""
+        self.usuario_actual_id = None
+        self.modo_creacion = True
         self.entries_cache.clear()
         self.redes_entries.clear()
 
         for widget in self.scroll_editor.winfo_children():
             widget.destroy()
 
-        usuario = usuarios_info.find_one({"_id": ObjectId(user_id)})
-        if not usuario:
-            messagebox.showerror("Error", "El usuario no existe.")
-            return
-
-        nombre_titular = usuario.get('nombre') or usuario.get('discriminador_discord') or 'Usuario'
         self.lbl_editor_title.config(
-            text=f"Editando a: {nombre_titular}",
-            fg=self.COLOR_TEXT
+            text="Creando Nuevo Usuario",
+            fg=self.COLOR_ACCENT
         )
         self.btn_guardar.config(state="normal")
 
-        # Iterar sobre las propiedades del usuario
-        for clave, valor in usuario.items():
-            if clave in ["_id", "mensajes_md"]:
-                continue
+        # Estructura base requerida
+        plantilla_usuario = {
+            "nombre": "",
+            "primera_aparicion": "",
+            "aliases": [],
+            "frase": "",
+            "descripcion": "",
+            "titulos": [],
+            "redes": {},
+            "discriminador_discord": "",
+            "validado": False,
+            "estadisticas": {
+                "estrellas": 0,
+                "mensajes": 0,
+                "xp": 0,
+                "nivel": 0,
+                "porcentaje": 0,
+                "corazones": 0,
+                "descontextualizaciones": 0
+            },
+            "num": None
+        }
 
-            # --- REDES SOCIALES ---
+        # Renderizar formulario usando la misma lógica de campos
+        for clave, valor in plantilla_usuario.items():
             if clave == "redes":
                 self.crear_seccion_redes(valor)
                 continue
@@ -226,7 +288,6 @@ class PanelUsuariosTkinter(tk.Tk):
             )
             lbl.pack(anchor="w", pady=(0, 2))
 
-            # Booleano
             if isinstance(valor, bool):
                 var = tk.BooleanVar(value=valor)
                 chk = tk.Checkbutton(
@@ -237,7 +298,6 @@ class PanelUsuariosTkinter(tk.Tk):
                 chk.pack(anchor="w")
                 self.entries_cache[clave] = var
 
-            # Cadenas / Texto Largo
             elif isinstance(valor, str):
                 if len(valor) > 60 or clave == "descripcion":
                     txt = tk.Text(
@@ -257,7 +317,6 @@ class PanelUsuariosTkinter(tk.Tk):
                     ent.pack(fill="x", expand=True, ipady=4)
                     self.entries_cache[clave] = ent
 
-            # Números
             elif isinstance(valor, (int, float)):
                 ent = tk.Entry(
                     frame_campo, font=("Segoe UI", 10), bg=self.COLOR_ENTRY,
@@ -267,7 +326,6 @@ class PanelUsuariosTkinter(tk.Tk):
                 ent.pack(fill="x", expand=True, ipady=4)
                 self.entries_cache[clave] = ent
 
-            # Listas
             elif isinstance(valor, list):
                 ent = tk.Entry(
                     frame_campo, font=("Segoe UI", 10), bg=self.COLOR_ENTRY,
@@ -277,7 +335,6 @@ class PanelUsuariosTkinter(tk.Tk):
                 ent.pack(fill="x", expand=True, ipady=4)
                 self.entries_cache[clave] = (ent, "list")
 
-            # Subdocumentos
             elif isinstance(valor, dict):
                 sub_group = tk.LabelFrame(
                     frame_campo, text=f" {clave.capitalize()} ", font=("Segoe UI", 9, "bold"),
@@ -304,6 +361,168 @@ class PanelUsuariosTkinter(tk.Tk):
                     sub_ent.pack(side="right", fill="x", expand=True, ipady=2)
 
                     self.entries_cache[clave][sub_k] = sub_ent
+
+            elif valor is None:
+                ent = tk.Entry(
+                    frame_campo, font=("Segoe UI", 10), bg=self.COLOR_ENTRY,
+                    fg=self.COLOR_TEXT, insertbackground="white", bd=1, relief="solid"
+                )
+                texto_inicial = ""
+                if clave == "num":
+                    try:
+                        pipeline = [
+                            {"$match": {"num": {"$type": "number"}}},
+                            {"$group": {"_id": None, "maxNum": {"$max": "$num"}}}
+                        ]
+                        resultado = list(usuarios_info.aggregate(pipeline))
+                        if resultado and "maxNum" in resultado[0]:
+                            texto_inicial = str(resultado[0]["maxNum"] + 1)
+                        else:
+                            texto_inicial = "0"
+                    except Exception:
+                        texto_inicial = ""
+
+                ent.insert(0, texto_inicial)
+                ent.pack(fill="x", expand=True, ipady=4)
+                self.entries_cache[clave] = ent
+
+    def cargar_formulario_usuario(self, user_id):
+        """Construye el formulario editable para el usuario seleccionado."""
+        self.usuario_actual_id = user_id
+        self.modo_creacion = False
+        self.entries_cache.clear()
+        self.redes_entries.clear()
+
+        for widget in self.scroll_editor.winfo_children():
+            widget.destroy()
+
+        usuario = usuarios_info.find_one({"_id": ObjectId(user_id)})
+        if not usuario:
+            messagebox.showerror("Error", "El usuario no existe.")
+            return
+
+        nombre_titular = usuario.get('nombre') or usuario.get('discriminador_discord') or 'Usuario'
+        self.lbl_editor_title.config(
+            text=f"Editando a: {nombre_titular}",
+            fg=self.COLOR_TEXT
+        )
+        self.btn_guardar.config(state="normal")
+
+        # Iterar sobre las propiedades del usuario
+        for clave, valor in usuario.items():
+            if clave in ["_id", "mensajes_md"]:
+                continue
+
+            if clave == "redes":
+                self.crear_seccion_redes(valor)
+                continue
+
+            frame_campo = tk.Frame(self.scroll_editor, bg=self.COLOR_PANEL, pady=6)
+            frame_campo.pack(fill="x", expand=True)
+
+            lbl = tk.Label(
+                frame_campo, text=clave.capitalize().replace("_", " "),
+                font=("Segoe UI", 10, "bold"), bg=self.COLOR_PANEL, fg=self.COLOR_MUTED
+            )
+            lbl.pack(anchor="w", pady=(0, 2))
+
+            if isinstance(valor, bool):
+                var = tk.BooleanVar(value=valor)
+                chk = tk.Checkbutton(
+                    frame_campo, text="Validado / Confirmado", variable=var,
+                    bg=self.COLOR_PANEL, fg=self.COLOR_TEXT, activebackground=self.COLOR_PANEL,
+                    activeforeground=self.COLOR_TEXT, selectcolor=self.COLOR_ENTRY, font=("Segoe UI", 10)
+                )
+                chk.pack(anchor="w")
+                self.entries_cache[clave] = var
+
+            elif isinstance(valor, str):
+                if len(valor) > 60 or clave == "descripcion":
+                    txt = tk.Text(
+                        frame_campo, height=3, font=("Segoe UI", 10),
+                        bg=self.COLOR_ENTRY, fg=self.COLOR_TEXT, insertbackground="white",
+                        bd=1, relief="solid", wrap="word"
+                    )
+                    txt.insert("1.0", valor)
+                    txt.pack(fill="x", expand=True)
+                    self.entries_cache[clave] = (txt, "text")
+                else:
+                    ent = tk.Entry(
+                        frame_campo, font=("Segoe UI", 10), bg=self.COLOR_ENTRY,
+                        fg=self.COLOR_TEXT, insertbackground="white", bd=1, relief="solid"
+                    )
+                    ent.insert(0, valor)
+                    ent.pack(fill="x", expand=True, ipady=4)
+                    self.entries_cache[clave] = ent
+
+            elif isinstance(valor, (int, float)):
+                ent = tk.Entry(
+                    frame_campo, font=("Segoe UI", 10), bg=self.COLOR_ENTRY,
+                    fg=self.COLOR_TEXT, insertbackground="white", bd=1, relief="solid"
+                )
+                ent.insert(0, str(valor))
+                ent.pack(fill="x", expand=True, ipady=4)
+                self.entries_cache[clave] = ent
+
+            elif isinstance(valor, list):
+                ent = tk.Entry(
+                    frame_campo, font=("Segoe UI", 10), bg=self.COLOR_ENTRY,
+                    fg=self.COLOR_TEXT, insertbackground="white", bd=1, relief="solid"
+                )
+                ent.insert(0, ", ".join([str(x) for x in valor]))
+                ent.pack(fill="x", expand=True, ipady=4)
+                self.entries_cache[clave] = (ent, "list")
+
+            elif isinstance(valor, dict):
+                sub_group = tk.LabelFrame(
+                    frame_campo, text=f" {clave.capitalize()} ", font=("Segoe UI", 9, "bold"),
+                    bg=self.COLOR_PANEL, fg=self.COLOR_ACCENT, bd=1, relief="solid", padx=10, pady=8
+                )
+                sub_group.pack(fill="x", expand=True, pady=4)
+
+                self.entries_cache[clave] = {}
+                for sub_k, sub_v in valor.items():
+                    sub_f = tk.Frame(sub_group, bg=self.COLOR_PANEL)
+                    sub_f.pack(fill="x", expand=True, pady=2)
+
+                    sub_lbl = tk.Label(
+                        sub_f, text=f"{sub_k}:", font=("Segoe UI", 9),
+                        bg=self.COLOR_PANEL, fg=self.COLOR_TEXT, width=22, anchor="w"
+                    )
+                    sub_lbl.pack(side="left")
+
+                    sub_ent = tk.Entry(
+                        sub_f, font=("Segoe UI", 9), bg=self.COLOR_ENTRY,
+                        fg=self.COLOR_TEXT, insertbackground="white", bd=1, relief="solid"
+                    )
+                    sub_ent.insert(0, str(sub_v) if sub_v is not None else "")
+                    sub_ent.pack(side="right", fill="x", expand=True, ipady=2)
+
+                    self.entries_cache[clave][sub_k] = sub_ent
+
+            elif valor is None:
+                ent = tk.Entry(
+                    frame_campo, font=("Segoe UI", 10), bg=self.COLOR_ENTRY,
+                    fg=self.COLOR_TEXT, insertbackground="white", bd=1, relief="solid"
+                )
+                texto_inicial = ""
+                if clave == "num":
+                    try:
+                        pipeline = [
+                            {"$match": {"num": {"$type": "number"}}},
+                            {"$group": {"_id": None, "maxNum": {"$max": "$num"}}}
+                        ]
+                        resultado = list(usuarios_info.aggregate(pipeline))
+                        if resultado and "maxNum" in resultado[0]:
+                            texto_inicial = str(resultado[0]["maxNum"] + 1)
+                        else:
+                            texto_inicial = "0"
+                    except Exception:
+                        texto_inicial = ""
+
+                ent.insert(0, texto_inicial)
+                ent.pack(fill="x", expand=True, ipady=4)
+                self.entries_cache[clave] = ent
 
     def crear_seccion_redes(self, dict_redes):
         """Sección interactiva para redes sociales."""
@@ -362,48 +581,52 @@ class PanelUsuariosTkinter(tk.Tk):
         row_frame.destroy()
 
     def guardar_cambios(self):
-        """Guarda las modificaciones en MongoDB."""
-        if not self.usuario_actual_id:
+        """Guarda las modificaciones o crea un nuevo usuario en MongoDB."""
+        if not self.modo_creacion and not self.usuario_actual_id:
             return
 
-        data_update = {}
+        data_dict = {}
 
         # Parsear campos
         for clave, obj in self.entries_cache.items():
             if isinstance(obj, tk.BooleanVar):
-                data_update[clave] = obj.get()
+                data_dict[clave] = obj.get()
 
             elif isinstance(obj, tk.Entry):
                 val = obj.get().strip()
-                if val.isdigit():
-                    data_update[clave] = int(val)
+                if val == "":
+                    data_dict[clave] = None
+                elif val.isdigit():
+                    data_dict[clave] = int(val)
                 else:
                     try:
-                        data_update[clave] = float(val)
+                        data_dict[clave] = float(val)
                     except ValueError:
-                        data_update[clave] = val
+                        data_dict[clave] = val
 
             elif isinstance(obj, tuple):
                 tipo = obj[1]
                 widget = obj[0]
                 if tipo == "text":
-                    data_update[clave] = widget.get("1.0", "end-1c").strip()
+                    data_dict[clave] = widget.get("1.0", "end-1c").strip()
                 elif tipo == "list":
                     elementos = [item.strip() for item in widget.get().split(",") if item.strip()]
-                    data_update[clave] = elementos
+                    data_dict[clave] = elementos
 
             elif isinstance(obj, dict):
                 sub_dict = {}
                 for sub_k, sub_ent in obj.items():
                     val = sub_ent.get().strip()
-                    if val.isdigit():
+                    if val == "":
+                        sub_dict[sub_k] = None
+                    elif val.isdigit():
                         sub_dict[sub_k] = int(val)
                     else:
                         try:
                             sub_dict[sub_k] = float(val)
                         except ValueError:
                             sub_dict[sub_k] = val
-                data_update[clave] = sub_dict
+                data_dict[clave] = sub_dict
 
         # Parsear Redes
         redes_dict = {}
@@ -413,18 +636,31 @@ class PanelUsuariosTkinter(tk.Tk):
             if plat:
                 redes_dict[plat] = val
 
-        data_update["redes"] = redes_dict
+        data_dict["redes"] = redes_dict
 
-        # Guardar
+        # Validación obligatoria del discriminador de Discord
+        discriminador_val = data_dict.get("discriminador_discord")
+        if not discriminador_val or str(discriminador_val).strip() == "":
+            messagebox.showerror("Error de validación", "El campo 'Discriminador Discord' es obligatorio para guardar el usuario.")
+            return
+
         try:
-            usuarios_info.update_one(
-                {"_id": ObjectId(self.usuario_actual_id)},
-                {"$set": data_update}
-            )
-            messagebox.showinfo("Éxito", "Usuario guardado correctamente.")
+            if self.modo_creacion:
+                # Insertar nuevo documento con la estructura completa
+                usuarios_info.insert_one(data_dict)
+                messagebox.showinfo("Éxito", "Usuario nuevo creado correctamente.")
+                self.modo_creacion = False
+            else:
+                # Actualizar existente
+                usuarios_info.update_one(
+                    {"_id": ObjectId(self.usuario_actual_id)},
+                    {"$set": data_dict}
+                )
+                messagebox.showinfo("Éxito", "Usuario guardado correctamente.")
+
             self.cargar_lista_usuarios()
         except Exception as e:
-            messagebox.showerror("Error", f"No se pudo guardar: {e}")
+            messagebox.showerror("Error", f"No se pudo guardar en la base de datos: {e}")
 
 if __name__ == "__main__":
     app = PanelUsuariosTkinter()

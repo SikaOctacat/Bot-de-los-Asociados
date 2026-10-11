@@ -258,8 +258,11 @@ async def usuarioInfo(interaction,objetivo=None):
     except:
         pass
 
+    if usuario["num"] == None:
+        usuario["num"] = ""
+    
     embed = discord.Embed(
-        title= usuario["nombre"],
+        title= f"#{usuario["num"]} {usuario["nombre"]}",
         description=resultado,
         color=color
     )
