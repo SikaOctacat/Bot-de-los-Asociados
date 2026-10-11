@@ -168,6 +168,7 @@ def crearUsuario(
     titulos=[],
     redes={},
     validado=False,
+    num=None,
 ):
     
     if not nombre:
@@ -198,7 +199,8 @@ def crearUsuario(
             "porcentaje": 0,
             "corazones": 0,
             "descontextualizaciones": 0
-        }
+        },
+        "num":num
     }
 
 limiteMensajes = 15
