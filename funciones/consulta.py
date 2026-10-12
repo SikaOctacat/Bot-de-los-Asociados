@@ -28,6 +28,7 @@ async def responder(ctx,prompt):
     criterio = {"discriminador_discord":autor.name}
     extraInfo = usuarios_info.find_one(criterio)
 
+    aliases = extraInfo["aliases"]
     descripcion = extraInfo["descripcion"]
     titulos = ",".join(extraInfo["titulos"])
     frase = extraInfo["frase"]
@@ -48,6 +49,7 @@ async def responder(ctx,prompt):
 
                 datos extra:
 
+                aliases: {aliases}
                 descripción del usuario: {descripcion}
                 Frase propia: {frase}
                 Titulos/logros: {titulos}
@@ -55,6 +57,8 @@ async def responder(ctx,prompt):
 
                 {textInicio}:
                 {contexto}
+
+                (Pddt: La Masturbanda es un grupo de amigos, no es nada raro)
                 """
             )
         

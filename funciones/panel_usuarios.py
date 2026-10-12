@@ -581,6 +581,166 @@ class PanelUsuariosTkinter(tk.Tk):
         row_frame.destroy()
 
     def guardar_cambios(self):
+        """Guarda las modificaciones o crea un nuevo usuario en MongoDB con validación de 'num'."""
+        if not self.modo_creacion and not self.usuario_actual_id:
+            return
+
+        data_dict = {}
+
+        # Parsear campos (tu código actual de parseo...)
+        for clave, obj in self.entries_cache.items():
+            if isinstance(obj, tk.BooleanVar):
+                data_dict[clave] = obj.get()
+
+            elif isinstance(obj, tk.Entry):
+                val = obj.get().strip()
+                if val == "":
+                    data_dict[clave] = None
+                elif val.isdigit():
+                    data_dict[clave] = int(val)
+                else:
+                    try:
+                        data_dict[clave] = float(val)
+                    except ValueError:
+                        data_dict[clave] = val
+
+            elif isinstance(obj, tuple):
+                tipo = obj[1]
+                widget = obj[0]
+                if tipo == "text":
+                    data_dict[clave] = widget.get("1.0", "end-1c").strip()
+                elif tipo == "list":
+                    elementos = [item.strip() for item in widget.get().split(",") if item.strip()]
+                    data_dict[clave] = elementos
+
+            elif isinstance(obj, dict):
+                sub_dict = {}
+                for sub_k, sub_ent in obj.items():
+                    val = sub_ent.get().strip()
+                    if val == "":
+                        sub_dict[sub_k] = None
+                    elif val.isdigit():
+                        sub_dict[sub_k] = int(val)
+                    else:
+                        try:
+                            sub_dict[sub_k] = float(val)
+                        except ValueError:
+                            sub_dict[sub_k] = val
+                data_dict[clave] = sub_dict
+
+        # Parsear Redes
+        redes_dict = {}
+        for _, (ent_plat, ent_val) in self.redes_entries.items():
+            plat = ent_plat.get().strip()
+            val = ent_val.get().strip()
+            if plat:
+                redes_dict[plat] = val
+
+        data_dict["redes"] = redes_dict
+
+        # Validación obligatoria del discriminador de Discord
+        discriminador_val = data_dict.get("discriminador_discord")
+        if not discriminador_val or str(discriminador_val).strip() == "":
+            messagebox.showerror("Error de validación", "El campo 'Discriminador Discord' es obligatorio para guardar el usuario.")
+            return
+
+        # ==========================================
+        # LÓGICA DE VALIDACIÓN DEL CAMPO 'num'
+        # ==========================================
+        nuevo_num = data_dict.get("num")
+        
+        if isinstance(nuevo_num, (int, float)):
+            # Obtener el mayor 'num' actual en la BD (excluyendo al usuario actual si estamos editando)
+            query_max = {"num": {"$type": "number"}}
+            if not self.modo_creacion and self.usuario_actual_id:
+                query_max["_id"] = {"$ne": ObjectId(self.usuario_actual_id)}
+            
+            pipeline = [
+                {"$match": query_max},
+                {"$group": {"_id": None, "maxNum": {"$max": "$num"}}}
+            ]
+            resultado = list(usuarios_info.aggregate(pipeline))
+            max_num = resultado[0]["maxNum"] if resultado and "maxNum" in resultado[0] else -1
+
+            # Caso 1: Mayor que el mayor + 1 (Se generarían huecos)
+            if nuevo_num > max_num + 1:
+                respuesta = messagebox.askyesno(
+                    "Advertencia de Huecos",
+                    f"El número ingresado ({nuevo_num}) es mayor al siguiente consecutivo recomendado ({max_num + 1}).\n"
+                    "Esto dejará huecos en la numeración.\n\n¿Deseas continuar de todas formas?",
+                    icon="warning"
+                )
+                if not respuesta:
+                    return # Cancela la operación
+
+            # Caso 2: Menor o igual al mayor actual
+            elif nuevo_num <= max_num:
+                # Creamos una ventana de diálogo personalizada para las 3 opciones
+                eleccion = [None] # Contenedor mutable para capturar la respuesta
+                
+                dialogo = tk.Toplevel(self)
+                dialogo.title("Conflicto de Numeración")
+                dialogo.geometry("400x200")
+                dialogo.configure(bg=self.COLOR_PANEL)
+                dialogo.transient(self)
+                dialogo.grab_set()
+                
+                # Centrar ventana
+                dialogo.update_idletasks()
+                x = self.winfo_x() + (self.winfo_width() // 2) - 200
+                y = self.winfo_y() + (self.winfo_height() // 2) - 100
+                dialogo.geometry(f"+{x}+{y}")
+
+                lbl_msg = tk.Label(
+                    dialogo, 
+                    text=f"El número {nuevo_num} ya está en uso o es menor al máximo actual ({max_num}).\n¿Qué acción deseas realizar?",
+                    font=("Segoe UI", 10), bg=self.COLOR_PANEL, fg=self.COLOR_TEXT, wraplength=380, justify="center"
+                ),
+                lbl_msg[0].pack(pady=20)
+
+                def seleccionar(opcion):
+                    eleccion[0] = opcion
+                    dialogo.destroy()
+
+                btn_frame = tk.Frame(dialogo, bg=self.COLOR_PANEL)
+                btn_frame.pack(pady=10)
+
+                tk.Button(btn_frame, text="Cancelar", bg=self.COLOR_DANGER, fg="white", font=("Segoe UI", 9, "bold"), bd=0, padx=10, pady=5, command=lambda: seleccionar("cancelar")).pack(side="left", padx=5)
+                tk.Button(btn_frame, text="Desplazar resto", bg=self.COLOR_ACCENT, fg="white", font=("Segoe UI", 9, "bold"), bd=0, padx=10, pady=5, command=lambda: seleccionar("desplazar")).pack(side="left", padx=5)
+                tk.Button(btn_frame, text="Forzar número", bg=self.COLOR_BTN_SAVE, fg="#11111b", font=("Segoe UI", 9, "bold"), bd=0, padx=10, pady=5, command=lambda: seleccionar("forzar")).pack(side="left", padx=5)
+
+                self.wait_window(dialogo)
+
+                if eleccion[0] == "cancelar" or eleccion[0] is None:
+                    return
+                elif eleccion[0] == "desplazar":
+                    # Desplazar a todos los usuarios con num >= nuevo_num sumándoles 1
+                    query_filtro = {"num": {"$gte": nuevo_num}}
+                    if not self.modo_creacion and self.usuario_actual_id:
+                        query_filtro["_id"] = {"$ne": ObjectId(self.usuario_actual_id)}
+                    usuarios_info.update_many(query_filtro, {"$inc": {"num": 1}})
+                elif eleccion[0] == "forzar":
+                    # Simplemente continúa y guarda con el número duplicado/colisionado
+                    pass
+
+        try:
+            if self.modo_creacion:
+                usuarios_info.insert_one(data_dict)
+                messagebox.showinfo("Éxito", "Usuario nuevo creado correctamente.")
+                self.modo_creacion = False
+            else:
+                usuarios_info.update_one(
+                    {"_id": ObjectId(self.usuario_actual_id)},
+                    {"$set": data_dict}
+                )
+                messagebox.showinfo("Éxito", "Usuario guardado correctamente.")
+
+            self.cargar_lista_usuarios()
+            # Recargar el formulario actual si se estaba editando para reflejar cambios si hubo desplazamiento
+            if not self.modo_creacion and self.usuario_actual_id:
+                self.cargar_formulario_usuario(self.usuario_actual_id)
+        except Exception as e:
+            messagebox.showerror("Error", f"No se pudo guardar en la base de datos: {e}")
         """Guarda las modificaciones o crea un nuevo usuario en MongoDB."""
         if not self.modo_creacion and not self.usuario_actual_id:
             return

@@ -83,23 +83,27 @@ async def ranking(ctx=False,select="estrellas",paginaActual=0):
     if not ctx:
         return embed
 
+    #A esto le faltan comentarios xD
     async def cambiarPagina(interaction):
             global botones
+            #Primera vez en la vida usando el nonlocal, pemite usar una variable de una funcion superior
             nonlocal paginaActual,select
             match interaction.data["custom_id"]:
                 case "siguiente": paginaActual += 1
                 case "anterior": paginaActual -= 1
-            
+
+            #El view es donde van los botones, vale
             view = discord.ui.View()
             for boton in botones:
                 if boton.label == "Anterior" and paginaActual < 1:
                     continue
-                
+
                 try:
                     limite = len(embed)
                 except:
                     limite = len(nombres)
 
+                #Veo que el limite es limite total de nombres y no el de paginas, por eso no entendia ae
                 if boton.label == "Siguiente" and (paginaActual+1)*ventana > limite:
                     continue
 
@@ -186,10 +190,11 @@ async def rankingNiveles(listaTop,nombres,paginaActual):
 
     return embeds
 
-async def usuarioInfo(interaction,objetivo=None):
+async def usuarioInfo(interaction,objetivo=None,giveEmbed=False):
 
     ctx = False
     if objetivo:
+        #Esto es dado el caso que se busque por sus discriminador  y no este en el server
         if isinstance(objetivo,str):
             nombre = objetivo
             color = 0xFFA500
@@ -204,15 +209,23 @@ async def usuarioInfo(interaction,objetivo=None):
         color = interaction.user.color
         foto = interaction.user.avatar.url
 
-    cursor = usuarios_info.find({"discriminador_discord":nombre})
 
-    usuario = list(cursor)
+    #Dado el caso que se introduzca un numero, intenta buscarlo por su numero
+    try:
+        nombre = int(nombre)
+        cursor = usuarios_info.find({"num":nombre})
+        usuario = list(cursor)
+
+        nombre = usuario[0]["discriminador_discord"]
+    except:
+        cursor = usuarios_info.find({"discriminador_discord":nombre})
+        usuario = list(cursor)
 
     if usuario == []:
         if ctx:
-            interaction.send("No estas registrado en la base datos todavia")
+            await interaction.send("El usuario no esta registrado en la base datos todavia")
         else:
-            interaction.followup.send("No estas registrado en la base datos todavia")
+            await interaction.followup.send("El usuario no esta registrado en la base datos todavia")
         return
     else:
         usuario = usuario[0]
@@ -229,6 +242,8 @@ async def usuarioInfo(interaction,objetivo=None):
     nivel = 0
     xp = 0
     estadisticas = "\n"
+
+    #Aca se procesa las estadisticas
     for elemento in usuario["estadisticas"].items():
         if elemento[0] == "porcentaje":
             estadisticas += f"* **{elemento[0]}**: _{elemento[1]}%_\n"
@@ -260,19 +275,71 @@ async def usuarioInfo(interaction,objetivo=None):
 
     if usuario["num"] == None:
         usuario["num"] = ""
-    
+
+    #Obtenemos la fotos dl usuario de tener una
     embed = discord.Embed(
         title= f"#{usuario["num"]} {usuario["nombre"]}",
         description=resultado,
         color=color
     )
 
+    #Obtenemos la fotos dl usuario de tener una
     if foto != "":
         embed.set_thumbnail(url=foto)
 
     embed.set_footer(text="Esta información es publica y es elegida por la administración.")
 
+    if giveEmbed:
+        return embed
+
+    async def cambiarPagina(interaction):
+            global botones
+            #Primera vez en la vida usando el nonlocal, pemite usar una variable de una funcion superior
+            nonlocal usuario
+            match interaction.data["custom_id"]:
+                case "siguiente": usuario["num"] += 1
+                case "anterior": usuario["num"] -= 1
+    
+            #El view es donde van los botones, vale
+            view = discord.ui.View()
+            for boton in botones:
+                if boton.label == "Anterior" and usuario["num"] < 1:
+                    continue
+    
+                #Busca si existe un usuario mas arriba
+                if boton.label == "Siguiente":
+                    siguiente = usuarios_info.find({"num":usuario["num"]+1})
+                    if siguiente == []:
+                        continue
+    
+                boton.callback = cambiarPagina
+    
+                view.add_item(boton)
+    
+            embed = await usuarioInfo(interaction,objetivo=str(usuario["num"]),giveEmbed=True)
+    
+            if isinstance(embed,list):
+                await interaction.response.edit_message(embeds=embed,view=view)
+            else:
+                await interaction.response.edit_message(embed=embed,view=view)
+
+    view = discord.ui.View()
+
+    for boton in botones:
+
+        if boton.label == "Anterior" and usuario["num"] < 1:
+            continue
+        elif boton.label == "Siguiente":
+            siguiente = usuarios_info.find({"num":usuario["num"]+1})
+            if siguiente == []:
+                continue
+
+        boton.callback = cambiarPagina
+
+        view.add_item(boton)
+
+
     if ctx:
-        await interaction.send(embed=embed)
+        await interaction.send(embed=embed,view=view)
     else:
-        await interaction.followup.send(embed=embed)
+        await interaction.followup.send(embed=embed,view=view)
