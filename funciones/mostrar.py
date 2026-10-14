@@ -308,7 +308,7 @@ async def usuarioInfo(interaction,objetivo=None,giveEmbed=False):
     
                 #Busca si existe un usuario mas arriba
                 if boton.label == "Siguiente":
-                    siguiente = usuarios_info.find({"num":usuario["num"]+1})
+                    siguiente = list(usuarios_info.find({"num":usuario["num"]+1}))
                     if siguiente == []:
                         continue
     
@@ -326,11 +326,10 @@ async def usuarioInfo(interaction,objetivo=None,giveEmbed=False):
     view = discord.ui.View()
 
     for boton in botones:
-
         if boton.label == "Anterior" and usuario["num"] < 1:
             continue
         elif boton.label == "Siguiente":
-            siguiente = usuarios_info.find({"num":usuario["num"]+1})
+            siguiente = list(usuarios_info.find({"num":usuario["num"]+1}))
             if siguiente == []:
                 continue
 
