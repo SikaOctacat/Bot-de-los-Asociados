@@ -60,7 +60,6 @@ nivelesXP = [100, 500, 1400, 3000, 5500, 9100, 14000, 20400, 28500, 38500, 50600
 
 #Esto es el historial de repuestas de bot
 limiteContexto = 3000
-textInicio = ""
 
 mensajes_respondiendo = {
     "en-US": ["Responding to ","Go to message","[Image or archive]"," is writing","Fowarded"],

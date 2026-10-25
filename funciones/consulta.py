@@ -10,6 +10,11 @@ async def responder(ctx,prompt):
     resumen = memoriaBot["resumen"]
     contexto = memoriaBot["contexto"]
 
+    if contexto == "":
+        textInicio = ""
+    else:
+        textInicio = "Contexto de la conversacion y mensajes previos:"
+
     respondiendo = ""
     if ctx.message.reference and ctx.message.reference.resolved:
         mensaje_respondido = ctx.message.reference.resolved
@@ -67,7 +72,7 @@ async def responder(ctx,prompt):
                 {nota}
                 Resumen anterior:
                 {resumen}
-                Contexto de la conversacion y mensajes previos:
+                {textInicio}
                 {contexto}
 
                 (Psdt: La Masturbanda es un grupo de amigos, no es nada raro)
