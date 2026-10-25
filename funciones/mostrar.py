@@ -269,6 +269,11 @@ async def usuarioInfo(interaction,objetivo=None,giveEmbed=False):
     resultado = f'**Primera aparición:** _{usuario["primera_aparicion"]}_\n**Aliases:** _{alias}_\n**Frase:** _{usuario["frase"].replace("'",'"')}_\n**Titulos:** _{titulo}_\n\n{usuario["descripcion"]} \n\n **Estadisticas:** {estadisticas} \n**Redes:** {redes}'
 
     try:
+        resultado += f'\n***Este usuario es amigo del bot***\n *Lo define como:* "{usuario["Nota del Bot"]}"\n'
+    except:
+        pass
+
+    try:
         resultado += f'\n***El usuario sugirió:***\n "{usuario["sugerencia"]}"'
     except:
         pass
