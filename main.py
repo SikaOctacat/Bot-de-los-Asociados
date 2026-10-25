@@ -197,13 +197,12 @@ async def on_comand(ctx):
     if ctx.author.id != 612445390314274826:
         return
 
-    await responderMensaje(ctx,", ".join(memoriaBot["lista_amigos"]),limite=1990,envol="`")
-    return
+    await responderMensaje(ctx,", ".join(memoriaBot["amigos"]),limite=1990,envol="`")
 
 @tree.command(name="lista_amigos",description="Muestra la lista de amigos del bot")
 async def on_command(interaction: discord.Interaction):
-
-    await interaction.response.send_message(", ".join(memoriaBot["lista_amigos"]))
+    
+    await interaction.response.send_message(", ".join(memoriaBot["amigos"]))
 
 @bot.command(name="actualizarNiveles")
 async def on_comand(ctx):
