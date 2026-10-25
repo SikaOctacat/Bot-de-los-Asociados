@@ -99,6 +99,7 @@ async def responder(ctx,prompt):
 
     contexto += f"Tu:{respuesta}"+"\n"
 
+    print(contexto)
     contexto_bot.update_one({"_id": ObjectId("6add5cc6c56f47a4ea869973")},{"$set":{"contexto":contexto}})
 
     if len(contexto) > limiteContexto:
@@ -138,6 +139,9 @@ async def responder(ctx,prompt):
 
             contexto_bot.update_one({"_id": ObjectId("6add5cc6c56f47a4ea869973")},{"$set":{"resumen":resumen}})
 
+            #Reincia el contexto
+            contexto_bot.update_one({"_id": ObjectId("6add5cc6c56f47a4ea869973")},{"$set":{"contexto":""}})
+
             #Aca se supone que extrae la descripcion si al bot le gusto
             favorito = re.findall(r'(?<=<)[^>]+(?=>)', resumen)
             if len(favorito) > 0:
@@ -150,7 +154,8 @@ async def responder(ctx,prompt):
                 resolucion = usuarios_info.update_one(criterio2,
                                         {"$set":{"Nota del Bot":favoritoDesc}})
         
-                if resolucion.matched_count > 0:
+                if resolucion.matched_count > 0 and not(favoritoNombre in memoriaBot["amigos"]):
+                    contexto_bot.update_one({"_id": ObjectId("6add5cc6c56f47a4ea869973")},{"$push":{"amigos":favoritoNombre}})
                     await responderMensaje(ctx,f"El bot ha agregado a {favoritoNombre} a su lista de amigos",noResponder=True)
 
         if len(contexto) > limiteContexto:

@@ -190,9 +190,21 @@ async def on_comand(ctx):
 
     await responderMensaje(ctx,memoriaBot["contexto"],limite=1990,envol="`")
     return
-        
 
-    await ctx.reply("No tengo contexto todavia..."+marca)
+@bot.command(name="lista_amigos")
+async def on_comand(ctx):
+
+    if ctx.author.id != 612445390314274826:
+        return
+
+    await responderMensaje(ctx,", ".join(memoriaBot["lista_amigos"]),limite=1990,envol="`")
+    return
+
+@tree.command(name="lista_amigos",description="Muestra la lista de amigos del bot")
+async def on_command(interaction:discord.Interaction,texto:str):
+    await interaction.response.defer()
+
+    await interaction.followup.send(", ".join(memoriaBot["lista_amigos"]))
 
 @bot.command(name="actualizarNiveles")
 async def on_comand(ctx):
