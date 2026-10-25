@@ -202,9 +202,8 @@ async def on_comand(ctx):
 
 @tree.command(name="lista_amigos",description="Muestra la lista de amigos del bot")
 async def on_command(interaction: discord.Interaction):
-    await interaction.response.defer()
 
-    await interaction.followup.send(", ".join(memoriaBot["lista_amigos"]))
+    await interaction.response.send_message(", ".join(memoriaBot["lista_amigos"]))
 
 @bot.command(name="actualizarNiveles")
 async def on_comand(ctx):
