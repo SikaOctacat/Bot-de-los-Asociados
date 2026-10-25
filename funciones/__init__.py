@@ -30,6 +30,8 @@ llave_Discord = os.getenv("LLAVE_DISCORD")
 baseDatos = mongoCliente["proyecto_asociacion_db"]
 usuarios_info = baseDatos["usuarios_info"]
 registros = baseDatos["registros"]
+contexto_bot  = baseDatos["contexto_bot"]
+memoriaBot = contexto_bot.find_one({"_id": ObjectId("6add5cc6c56f47a4ea869973")})
 
 
 # Vale, entonces esto le dice a Discord que por favor me deje leer los mensajes de los usarios por favorcito
@@ -58,7 +60,6 @@ nivelesXP = [100, 500, 1400, 3000, 5500, 9100, 14000, 20400, 28500, 38500, 50600
 
 #Esto es el historial de repuestas de bot
 limiteContexto = 3000
-contexto = ""
 textInicio = ""
 
 mensajes_respondiendo = {

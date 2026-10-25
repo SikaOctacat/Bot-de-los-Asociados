@@ -188,12 +188,8 @@ async def on_comand(ctx):
     if ctx.author.id != 612445390314274826:
         return
 
-    for _ in range(10):
-        if consulta.contexto and consulta.contexto != "":
-            await responderMensaje(ctx,consulta.contexto,limite=1990,envol="`")
-            return
-            
-        await asyncio.sleep(0.5)
+    await responderMensaje(ctx,memoriaBot["contexto"],limite=1990,envol="`")
+    return
         
 
     await ctx.reply("No tengo contexto todavia..."+marca)

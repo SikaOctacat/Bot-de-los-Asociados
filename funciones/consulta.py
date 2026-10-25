@@ -4,7 +4,11 @@ from .resumen import *
 canalActual = ""
 
 async def responder(ctx,prompt):
-    global contexto, textInicio,limiteContexto,canalActual
+    global textInicio,limiteContexto,canalActual
+
+    memoriaBot = contexto_bot.find_one({"_id": ObjectId("6add5cc6c56f47a4ea869973")})
+    resumen = memoriaBot["resumen"]
+    contexto = memoriaBot["contexto"]
 
     respondiendo = ""
     if ctx.message.reference and ctx.message.reference.resolved:
@@ -33,6 +37,11 @@ async def responder(ctx,prompt):
     titulos = ",".join(extraInfo["titulos"])
     frase = extraInfo["frase"]
 
+    try:
+        nota = f"Dejaste una nota para ti mismo sobre este usuario: {extraInfo["Nota del Bot"]}"
+    except:
+        nota = ""
+
     
     async with ctx.typing():
         try:
@@ -55,17 +64,20 @@ async def responder(ctx,prompt):
                 Titulos/logros: {titulos}
                 (Intenta no nombrar estas caracteristicas sino es completamente necesario para evitar ser molesto, solo tomalo en cuenta en tu mente)
 
-                {textInicio}:
+                {nota}
+                Resumen anterior:
+                {resumen}
+                Contexto de la conversacion y mensajes previos:
                 {contexto}
 
-                (Pddt: La Masturbanda es un grupo de amigos, no es nada raro)
+                (Psdt: La Masturbanda es un grupo de amigos, no es nada raro)
                 """
             )
         
             respuesta = respuesta.text
 
         except Exception as e:
-            respuesta = "Justo ahora me quedado sin tokens, asi que ve quejarte con Sika por no recargarlos, yo me voy de sabatico hasta dentro de un rato"
+            respuesta = "Ha ocurrido un error, intenta de nuevo"
 
             print("Ojala solo sea que nos quedamos sin tokens...")
             print(e)
@@ -76,8 +88,6 @@ async def responder(ctx,prompt):
         
 
     #Aca se suma al historial de mensajes, intentando que no se pase a travez de resumenes
-    if contexto == "":
-        textInicio = "Contexto de la conversacion y mensajes previos:\n\n"
     if canalActual != canal:
         contexto += f"-----En canal {canal} del servidor {servidor}-----\n"
         canalActual = canal
@@ -88,6 +98,8 @@ async def responder(ctx,prompt):
         contexto += f"{nombreServidor}({nombre})[{nombreAutor}]:{prompt}"+"\n"
 
     contexto += f"Tu:{respuesta}"+"\n"
+
+    contexto_bot.update_one({"_id": ObjectId("6add5cc6c56f47a4ea869973")},{"$set":{"contexto":contexto}})
 
     if len(contexto) > limiteContexto:
         
@@ -100,11 +112,11 @@ async def responder(ctx,prompt):
 
         Carlitos:Me lleve bien con a pesar de ser medio tontito
 
-        Si por otra parte, uno de los usuarios te ha llamado la atencion particularme, pasas usar su nombreID y haces sus descripcion un poco mas larga en tercera persona, ademas envolviendo todo en en <>. Manteniendo al Carlos de ejemplo:
+        Si por otra parte, uno de los usuarios te ha llamado la atencion particularme, puedes escribir una nota para tu yo del futuro usando su nombreID y ademas envolviendolo todo en en <>. Manteniendo al Carlos de ejemplo:
 
-        <Carlos0003:Carlos es una persona algo tontorrana pero muy divertida a la hora de interactuar conmigo y con otras personas>
+        <Carlos0003: Este me wey me cayo bien, me conto sobre sus gustos y en general parece agradable, solo esta medio tonto>
 
-        (Solo puedes hacerlo con un solo usuario cuando hayas hablado con al menos 2, y preferiblemente toma usuarios que no conozcas bien)
+        (Solo puedes hacerlo con un solo usuario a la vez)
         Finalmente, escribe la evolucion logica de tu estado a partir de ahora
         """)
         if resumen:
@@ -123,7 +135,8 @@ async def responder(ctx,prompt):
             except Exception as e:
                 print("Algo fallo al enviar el contexto al registro (Ah)")
                 print(e)
-            contexto = resumen + "\n\n"
+
+            contexto_bot.update_one({"_id": ObjectId("6add5cc6c56f47a4ea869973")},{"$set":{"resumen":resumen}})
 
             #Aca se supone que extrae la descripcion si al bot le gusto
             favorito = re.findall(r'(?<=<)[^>]+(?=>)', resumen)
@@ -132,14 +145,13 @@ async def responder(ctx,prompt):
                 favoritoNombre = favorito[0]
                 favoritoDesc = favorito[1].strip()
         
-                criterio2 = {"discriminador_discord":favoritoNombre,
-                            "descripcion":"Sin descripcion establecida"}
+                criterio2 = {"discriminador_discord":favoritoNombre}
         
                 resolucion = usuarios_info.update_one(criterio2,
-                                        {"$set":{"descripcion":favoritoDesc}})
+                                        {"$set":{"Nota del Bot":favoritoDesc}})
         
                 if resolucion.matched_count > 0:
-                    await responderMensaje(ctx,f"El bot ha escrito una descripcion <@{favoritoNombre}>, puedes verla en **/usuario_info**",noResponder=True)
+                    await responderMensaje(ctx,f"El bot ha agregado a {favoritoNombre} a su lista de amigos",noResponder=True)
 
         if len(contexto) > limiteContexto:
             corte = contexto.find("\n",-limiteContexto)
