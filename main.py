@@ -187,7 +187,8 @@ async def on_comand(ctx):
 
     if ctx.author.id != 612445390314274826:
         return
-
+    
+    memoriaBot = contexto_bot.find_one({"_id": ObjectId("6add5cc6c56f47a4ea869973")})
     await responderMensaje(ctx,memoriaBot["contexto"],limite=1990,envol="`")
     return
 
@@ -196,7 +197,8 @@ async def on_comand(ctx):
 
     if ctx.author.id != 612445390314274826:
         return
-
+    
+    memoriaBot = contexto_bot.find_one({"_id": ObjectId("6add5cc6c56f47a4ea869973")})
     lista = ", ".join(memoriaBot["amigos"])
 
     await responderMensaje(ctx,f"Mis amigo son:\n\n{lista}\n\nPuedes consultar mis anotaciones sobre ellos revisando sus respectivos perfiles con el comando /usuario_info")
@@ -204,6 +206,7 @@ async def on_comand(ctx):
 @tree.command(name="lista_amigos",description="Muestra la lista de amigos del bot")
 async def on_command(interaction: discord.Interaction):
 
+    memoriaBot = contexto_bot.find_one({"_id": ObjectId("6add5cc6c56f47a4ea869973")})
     lista = ", ".join(memoriaBot["amigos"])
     
     await interaction.response.send_message(f"Mis amigo son:\n\n{lista}\n\nPuedes consultar mis anotaciones sobre ellos revisando sus respectivos perfiles con el comando /usuario_info")
