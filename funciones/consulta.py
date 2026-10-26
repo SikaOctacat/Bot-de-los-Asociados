@@ -104,12 +104,11 @@ async def responder(ctx,prompt):
 
     contexto += f"Tu:{respuesta}"+"\n"
 
-    print(contexto)
     contexto_bot.update_one({"_id": ObjectId("6add5cc6c56f47a4ea869973")},{"$set":{"contexto":contexto}})
 
     if len(contexto) > limiteContexto:
         
-        resumen = await resumir(contexto, promt="""Haz un resumen de este texto, tomando en cuenta que tu eres el Bot de los Asociados, por lo que refierete a el primera persona 
+        resumen = await resumir(resumen+"\n"+contexto, promt="""Haz un resumen de este texto, tomando en cuenta que tu eres el Bot de los Asociados, por lo que refierete a el primera persona 
         
         Los mensajes de los usuario siguen esta estructura, si te pido por "nombreID" por ejemplo, necesito que des ese y solo ese, sin incluir los parentesis ni corchetes:
         apodoServidor(apodoGeneral)[nombreID]: texto
@@ -162,18 +161,6 @@ async def responder(ctx,prompt):
                 if resolucion.matched_count > 0 and not(favoritoNombre in memoriaBot["amigos"]):
                     contexto_bot.update_one({"_id": ObjectId("6add5cc6c56f47a4ea869973")},{"$push":{"amigos":favoritoNombre}})
                     await responderMensaje(ctx,f"El bot ha agregado a {favoritoNombre} a su lista de amigos",noResponder=True)
-
-        if len(contexto) > limiteContexto:
-            corte = contexto.find("\n",-limiteContexto)
-            if corte != -1:
-                contexto = "..."+contexto[corte+1:]
-            else:
-                corte = contexto.find(" ",-limiteContexto)
-
-            if corte != -1:
-                contexto = "..."+contexto[corte+1:]
-            else:
-                contexto = contexto[-limiteContexto:]
 
 
 async def preguntar(ctx, promt):
