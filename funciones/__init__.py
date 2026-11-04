@@ -67,7 +67,7 @@ mensajes_respondiendo = {
 }
 
 canales = {
-
+    #Canales de traduccion
     "escaladaIngles" : {
         "ID": 1428833199320076379,
         "idioma_entrada": "en-US",
@@ -114,6 +114,7 @@ canales = {
         "historial" : {}
     },
 
+    #Canales de fuera de contexto
     "senderoContexto": {
         "ID": 1051626976227635230
     },
@@ -124,6 +125,18 @@ canales = {
 
     "asociadosContexto": {
         "ID": 1502753232756412426
+    },
+    #Canales subida de nivel
+    "senderoNivel": {
+        "ID": 1020455712456982559
+    },
+
+    "escaladaNivel": {
+        "ID": 1294833147321520230
+    },
+
+    "asociadosNivel": {
+        "ID": 1294848209134551050
     },
 }
 mensajes_borrados = {}
@@ -249,7 +262,7 @@ def crearCargador(porcentaje,llenado="█",vacio="▒",largo=30,base=100):
 
     return resultado
 
-async def responderMensaje(ctx,respuesta,limite=2000,envol="",noResponder=False):
+async def responderMensaje(ctx,respuesta,limite=2000,envol="",noResponder=False,embed=False):
 
     limite -= len(envol)*2 - len(marca)
 
@@ -277,7 +290,7 @@ async def responderMensaje(ctx,respuesta,limite=2000,envol="",noResponder=False)
     else:
         if noResponder or not(hasattr(ctx,'reply')):
             await ctx.send(envol+respuesta.strip()+envol + marca,
-                        allowed_mentions=allowed_mentions)
+                        allowed_mentions=allowed_mentions,embed=embed)
         else:
-            await ctx.reply(envol+respuesta.strip()+envol + marca,allowed_mentions=allowed_mentions)
+            await ctx.reply(envol+respuesta.strip()+envol + marca,allowed_mentions=allowed_mentions,embed=embed)
 
