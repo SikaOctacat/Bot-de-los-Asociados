@@ -26,8 +26,7 @@ async def on_message(message):
             return
 
     if bot.user == message.author:
-        if not(message.content.endswith(marca)):
-            return
+        return
         
     await niveles(message)
 

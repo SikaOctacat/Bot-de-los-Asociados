@@ -1,7 +1,5 @@
 from funciones import *
-
 async def niveles(message):
-
     if message.author.bot and message.author != bot.user:
         return
 
@@ -19,6 +17,7 @@ async def niveles(message):
     
     usuarios_info.update_one(criterio,
                             {"$inc":{"estadisticas.mensajes":1}})
+
     
     usuario = usuarios_info.find_one(criterio)
 
@@ -28,7 +27,6 @@ async def niveles(message):
     if nombre != usuario["nombre"]:
         nombre = usuario["nombre"]
     
-
     subioDeNivel = False
     while xp >= nivelesXP[nivel]:
         nivel += 1
@@ -55,11 +53,18 @@ async def niveles(message):
 
     #Aca se envia el mensaje avisando la subida del nivel en todas partes
     if subioDeNivel:
-        for canalNombre in ["senderoNivel","escaladaNivel","asociadosNivel"]:
-            canal = bot.fetch_channel(canales[canalNombre]["ID"])
-            
-            if canal.archived:
-                await canal.edit(archived=False)
+        for IDS in [["senderoNivel","Sendero"],["escaladaNivel","Escalada"],["asociadosNivel","Asociacion"]]:
+
+            canalNombre = IDS[0]
+            try:
+                canal = await bot.fetch_channel(canales[canalNombre]["ID"])
+            except:
+                continue
+
+            serverID = servidores[IDS[1]]
+            contenido = ""
+            if message.guild.id == serverID:
+                contenido = f"<@{message.author.id}>"
 
             embed = discord.Embed(
                 title= f"¡Felicidades {nombre}!",
@@ -67,5 +72,5 @@ async def niveles(message):
                 color=0x35F01A
             )
 
-            await responderMensaje(canal,embed=embed,noResponder=True)
+            await responderMensaje(canal,contenido,embed=embed,noResponder=True)
 

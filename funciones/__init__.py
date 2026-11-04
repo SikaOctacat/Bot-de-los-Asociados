@@ -66,6 +66,12 @@ mensajes_respondiendo = {
     "es-419": ["Respondiendo a ","Ir al mensaje","[Imagen o archivo]"," esta ecribiendo","Reenviado"]
 }
 
+servidores = {
+    "Sendero": 1020042170230648852,
+    "Escalada": 1086801840764629093,
+    "Asociacion": 1294734570788491304
+}
+
 canales = {
     #Canales de traduccion
     "escaladaIngles" : {
@@ -262,7 +268,7 @@ def crearCargador(porcentaje,llenado="█",vacio="▒",largo=30,base=100):
 
     return resultado
 
-async def responderMensaje(ctx,respuesta,limite=2000,envol="",noResponder=False,embed=False):
+async def responderMensaje(ctx,respuesta="",limite=2000,envol="",noResponder=False,embed=None):
 
     limite -= len(envol)*2 - len(marca)
 
