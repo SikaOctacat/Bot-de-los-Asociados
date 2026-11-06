@@ -56,7 +56,16 @@ class PanelUsuariosTkinter(tk.Tk):
             activeforeground=self.COLOR_TEXT, bd=0, pady=6, cursor="hand2",
             command=self.preparar_nuevo_usuario
         )
-        btn_nuevo.pack(fill="x", pady=(0, 10))
+        btn_nuevo.pack(fill="x", pady=(0, 5))
+
+        # --- BOTÓN GRÁFICA DE NIVELES (AGREGAR ESTO) ---
+        btn_grafica = tk.Button(
+            left_panel, text="📊 Ver Gráfica de Niveles", font=("Segoe UI", 10, "bold"),
+            bg=self.COLOR_PANEL, fg=self.COLOR_TEXT, activebackground=self.COLOR_ENTRY,
+            activeforeground=self.COLOR_TEXT, bd=1, relief="solid", pady=6, cursor="hand2",
+            command=self.mostrar_grafica_niveles
+        )
+        btn_grafica.pack(fill="x", pady=(0, 10))
 
         # --- BUSCADOR ---
         search_frame = tk.Frame(left_panel, bg=self.COLOR_PANEL)
@@ -579,6 +588,104 @@ class PanelUsuariosTkinter(tk.Tk):
         if row_frame in self.redes_entries:
             del self.redes_entries[row_frame]
         row_frame.destroy()
+
+    def mostrar_grafica_niveles(self):
+        """Muestra una ventana emergente con un gráfico de barras nativo (Eje X: Nivel, Eje Y: Cantidad de personas)."""
+        # 1. Obtener datos de MongoDB (agrupando por nivel)
+        pipeline = [
+            {"$group": {"_id": {"$ifNull": ["$estadisticas.nivel", 0]}, "cantidad": {"$sum": 1}}},
+            {"$sort": {"_id": 1}}
+        ]
+        datos = list(usuarios_info.aggregate(pipeline))
+
+        # Crear ventana emergente (Toplevel)
+        v_grafica = tk.Toplevel(self)
+        v_grafica.title("Distribución de Niveles")
+        v_grafica.geometry("700x450")
+        v_grafica.configure(bg=self.COLOR_BG)
+        v_grafica.transient(self)
+        v_grafica.grab_set()
+
+        # Título superior
+        lbl_titulo = tk.Label(
+            v_grafica, text="Distribución de Personas por Nivel",
+            font=("Segoe UI", 14, "bold"), bg=self.COLOR_BG, fg=self.COLOR_TEXT
+        )
+        lbl_titulo.pack(pady=15)
+
+        if not datos:
+            lbl_vacio = tk.Label(
+                v_grafica, text="No hay datos de niveles disponibles.",
+                font=("Segoe UI", 11), bg=self.COLOR_BG, fg=self.COLOR_MUTED
+            )
+            lbl_vacio.pack(pady=50)
+            return
+
+        # 2. Crear Canvas para dibujar las barras
+        canvas_w, canvas_h = 640, 320
+        canvas = tk.Canvas(v_grafica, width=canvas_w, height=canvas_h, bg=self.COLOR_PANEL, highlightthickness=0)
+        canvas.pack(padx=20, pady=10)
+
+        niveles = [item["_id"] for item in datos]
+        cantidades = [item["cantidad"] for item in datos]
+
+        max_cant = max(cantidades) if cantidades else 1
+        max_nivel = max(niveles) if niveles else 1
+        min_nivel = min(niveles) if niveles else 0
+
+        # Márgenes internos del canvas
+        margin_x = 50
+        margin_y = 40
+        plot_w = canvas_w - (margin_x * 2)
+        plot_h = canvas_h - (margin_y * 2)
+
+        # Dibujar Ejes X e Y
+        canvas.create_line(margin_x, canvas_h - margin_y, canvas_w - margin_x, canvas_h - margin_y, fill=self.COLOR_MUTED, width=2) # Eje X
+        canvas.create_line(margin_x, margin_y, margin_x, canvas_h - margin_y, fill=self.COLOR_MUTED, width=2) # Eje Y
+
+        # Dibujar líneas guía horizontales y etiquetas del Eje Y
+        num_lineas = 4
+        for i in range(num_lineas + 1):
+            val_y = int((max_cant / num_lineas) * i)
+            pos_y = (canvas_h - margin_y) - (plot_h / num_lineas) * i
+            
+            # Línea de guía tenue
+            if i > 0:
+                canvas.create_line(margin_x, pos_y, canvas_w - margin_x, pos_y, fill="#38384f", dash=(2, 2))
+            
+            # Texto Eje Y
+            canvas.create_text(margin_x - 10, pos_y, text=str(val_y), fill=self.COLOR_MUTED, font=("Segoe UI", 8), anchor="e")
+
+        # 3. Dibujar barras distribuidas por nivel en el Eje X
+        rango_niveles = max_nivel - min_nivel + 1
+        ancho_disponible = plot_w / max(rango_niveles, 1)
+        ancho_barra = max(min(ancho_disponible * 0.6, 40), 10) # Ancho dinámico de barra
+
+        # Mapear cantidades existentes por nivel para acceso rápido
+        dict_datos = {item["_id"]: item["cantidad"] for item in datos}
+
+        for nivel in range(min_nivel, max_nivel + 1):
+            cantidad = dict_datos.get(nivel, 0)
+            
+            # Coordenadas X centradas para este nivel
+            idx = nivel - min_nivel
+            x_centro = margin_x + (idx * ancho_disponible) + (ancho_disponible / 2)
+            x0 = x_centro - (ancho_barra / 2)
+            x1 = x_centro + (ancho_barra / 2)
+
+            # Altura de la barra proporcional
+            altura_barra = (cantidad / max_cant) * plot_h if max_cant > 0 else 0
+            y0 = (canvas_h - margin_y) - altura_barra
+            y1 = canvas_h - margin_y
+
+            # Dibujar barra (si hay cantidad > 0)
+            if cantidad > 0:
+                canvas.create_rectangle(x0, y0, x1, y1, fill=self.COLOR_ACCENT, outline="")
+                # Etiqueta de cantidad encima de la barra
+                canvas.create_text(x_centro, y0 - 10, text=str(cantidad), fill=self.COLOR_TEXT, font=("Segoe UI", 9, "bold"))
+
+            # Etiqueta del Eje X (Nivel)
+            canvas.create_text(x_centro, (canvas_h - margin_y) + 15, text=f"Lv.{nivel}", fill=self.COLOR_MUTED, font=("Segoe UI", 9))
 
     def guardar_cambios(self):
         """Guarda las modificaciones o crea un nuevo usuario en MongoDB con validación de 'num'."""

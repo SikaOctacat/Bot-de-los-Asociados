@@ -330,17 +330,19 @@ async def usuarioInfo(interaction,objetivo=None,giveEmbed=False):
 
     view = discord.ui.View()
 
-    for boton in botones:
-        if boton.label == "Anterior" and usuario["num"] < 1:
-            continue
-        elif boton.label == "Siguiente":
-            siguiente = list(usuarios_info.find({"num":usuario["num"]+1}))
-            if siguiente == []:
+    #Con esto evita agregar las botones si el usuario no tiene un numero
+    if usuario["num"] != None:
+        for boton in botones:
+            if boton.label == "Anterior" and usuario["num"] < 1:
                 continue
+            elif boton.label == "Siguiente":
+                siguiente = list(usuarios_info.find({"num":usuario["num"]+1}))
+                if siguiente == []:
+                    continue
 
-        boton.callback = cambiarPagina
+            boton.callback = cambiarPagina
 
-        view.add_item(boton)
+            view.add_item(boton)
 
 
     if ctx:
