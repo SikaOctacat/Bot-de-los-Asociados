@@ -331,7 +331,7 @@ async def usuarioInfo(interaction,objetivo=None,giveEmbed=False):
     view = discord.ui.View()
 
     #Con esto evita agregar las botones si el usuario no tiene un numero
-    if usuario["num"] != None:
+    if usuario["num"] != "":
         for boton in botones:
             if boton.label == "Anterior" and usuario["num"] < 1:
                 continue
