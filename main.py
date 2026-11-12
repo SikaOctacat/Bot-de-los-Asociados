@@ -226,7 +226,7 @@ async def on_comand(ctx):
         xp = usuario["estadisticas"]["xp"]
         nivel = 0
         for _ in nivelesXP:
-            if nivelesXP[nivel] > xp:
+            if nivel + 1 >= len(nivelesXP) or nivelesXP[nivel] > xp:
                 break
             nivel += 1
 

@@ -22,6 +22,10 @@ async def niveles(message):
     usuario = usuarios_info.find_one(criterio)
 
     nivel = usuario["estadisticas"]["nivel"]
+    
+    if nivel >= len(nivelesXP):
+        return
+
     xp = usuario["estadisticas"]["xp"]
 
     if nombre != usuario["nombre"]:

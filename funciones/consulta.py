@@ -159,7 +159,8 @@ async def responder(ctx,prompt):
                                         {"$set":{"Nota del Bot":favoritoDesc}})
         
                 if resolucion.matched_count > 0 and not(favoritoNombre in memoriaBot["amigos"]):
-                    contexto_bot.update_one({"_id": ObjectId("6add5cc6c56f47a4ea869973")},{"$push":{"amigos":favoritoNombre}})
+                    contexto_bot.update_one({"_id": ObjectId("6add5cc6c56f47a4ea869973")},
+                                            {"$push":{"amigos":favoritoNombre}})
                     await responderMensaje(ctx,f"El bot ha agregado a {favoritoNombre} a su lista de amigos",noResponder=True)
 
 
