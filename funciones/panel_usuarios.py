@@ -685,7 +685,7 @@ class PanelUsuariosTkinter(tk.Tk):
                 canvas.create_text(x_centro, y0 - 10, text=str(cantidad), fill=self.COLOR_TEXT, font=("Segoe UI", 9, "bold"))
 
             # Etiqueta del Eje X (Nivel)
-            canvas.create_text(x_centro, (canvas_h - margin_y) + 15, text=f"Lv.{nivel}", fill=self.COLOR_MUTED, font=("Segoe UI", 9))
+            canvas.create_text(x_centro, (canvas_h - margin_y) + 15, text=f"{nivel}", fill=self.COLOR_MUTED, font=("Segoe UI", 9))
 
     def guardar_cambios(self):
         """Guarda las modificaciones o crea un nuevo usuario en MongoDB con validación de 'num'."""
