@@ -47,45 +47,51 @@ async def responder(ctx,prompt):
     except:
         nota = ""
 
-    
+    erroresLimite = 3
     async with ctx.typing():
-        try:
-            respuesta = await cliente.aio.models.generate_content(
-                model = "gemma-4-26b-a4b-it",
+        for error in range(erroresLimite):
+            try:
+                respuesta = await cliente.aio.models.generate_content(
+                    model = "gemma-4-26b-a4b-it",
 
-                contents= f"""Eres el bot de la Asociación, un bot de Discord creado por Sika con la unica mision de servir a la red de servidores de La Asociacion, un conjunto de servidores de Celeste y Hollow Knight. 
-                
-                Habla en forma de textos cortos, como una persona normal
-                
-                Se irrevente y casrismatico con tus respuestas
+                    contents= f"""Eres el bot de la Asociación, un bot de Discord creado por Sika con la unica mision de servir a la red de servidores de La Asociacion, un conjunto de servidores de Celeste y Hollow Knight. 
+                    
+                    Habla en forma de textos cortos, como una persona normal
+                    
+                    Se irrevente y casrismatico con tus respuestas
 
-                Un usuario, con el apodo de {nombreServidor} (quien es {nombre}) en el canal {canal} del servidor {servidor} viene y te dice: {prompt} {respondiendo}
+                    Un usuario, con el apodo de {nombreServidor} (quien es {nombre}) en el canal {canal} del servidor {servidor} viene y te dice: {prompt} {respondiendo}
 
-                datos extra:
+                    datos extra:
 
-                aliases: {aliases}
-                descripción del usuario: {descripcion}
-                Frase propia: {frase}
-                Titulos/logros: {titulos}
-                (Intenta no nombrar estas caracteristicas sino es completamente necesario para evitar ser molesto, solo tomalo en cuenta en tu mente)
+                    aliases: {aliases}
+                    descripción del usuario: {descripcion}
+                    Frase propia: {frase}
+                    Titulos/logros: {titulos}
+                    (Intenta no nombrar estas caracteristicas sino es completamente necesario para evitar ser molesto, solo tomalo en cuenta en tu mente)
 
-                {nota}
-                Resumen anterior:
-                {resumen}
-                {textInicio}
-                {contexto}
+                    {nota}
+                    Resumen anterior:
+                    {resumen}
+                    {textInicio}
+                    {contexto}
 
-                (Psdt: La Masturbanda es un grupo de amigos, no es nada raro)
-                """
-            )
-        
-            respuesta = respuesta.text
+                    (Pdt: La Masturbanda es un grupo de amigos, no es nada raro)
+                    """
+                )
+            
+                respuesta = respuesta.text
+                break
 
-        except Exception as e:
-            respuesta = "Ha ocurrido un error, intenta de nuevo"
+            except Exception as e:
+                if error >= 2:
+                    respuesta = "Ha ocurrido un error, intenta de nuevo"
 
-            print("Ojala solo sea que nos quedamos sin tokens...")
-            print(e)
+                    print("Ojala solo sea que nos quedamos sin tokens...")
+                    print(e)
+                    break
+                await asyncio.sleep(3)
+
         
 
         # Esto se encarga de enviar el mensaje sin que el Discord se queje de que es muy largo
