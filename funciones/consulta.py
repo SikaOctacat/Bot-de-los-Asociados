@@ -1,5 +1,6 @@
 from funciones import *
 from .resumen import *
+from random import choice
 
 canalActual = ""
 
@@ -85,12 +86,17 @@ async def responder(ctx,prompt):
 
             except Exception as e:
                 if error >= 2:
-                    respuesta = "Ha ocurrido un error, intenta de nuevo"
+                    respuesta = choice(["No sé que dijiste pero hubo un error xd",
+                                        "¿Eh? muy interesante, pero la condenada API de mi cerebro no hace caso, por lo que tendras que probar de nuevo",
+                                        "Muy buen argumento, sin embargo, mi cerebro crasheo, por lo que lo voy a ignorar",
+                                        "ERROR: Mi hosting de porqueria no dio para mas y me rendí de responderte",
+                                        "AHHHHHHH ***Explota en mensajes de error***",
+                                        "Disculpa que no te responda, pero Sika, si lees esto, mejorame el plan de IA por que acabo de dar error"])
 
                     print("Ojala solo sea que nos quedamos sin tokens...")
                     print(e)
                     break
-                await asyncio.sleep(3)
+                await asyncio.sleep(5)
 
         
 
@@ -114,22 +120,28 @@ async def responder(ctx,prompt):
 
     if len(contexto) > limiteContexto:
         
-        resumen = await resumir(resumen+"\n"+contexto, promt="""Haz un resumen de este texto, tomando en cuenta que tu eres el Bot de los Asociados, por lo que refierete a el primera persona 
-        
-        Los mensajes de los usuario siguen esta estructura, si te pido por "nombreID" por ejemplo, necesito que des ese y solo ese, sin incluir los parentesis ni corchetes:
-        apodoServidor(apodoGeneral)[nombreID]: texto
+        resumen = await resumir(
+        f"{resumen}\n{contexto}",
+        prompt="""Eres el "Bot de los Asociados". Resume lo ocurrido en la conversación anterior en primera persona, actualizando tu memoria previa con los eventos nuevos.
 
-        Por ejemplo, si quieres guardar informacion del usuario Carlos(Carlitos)[Carlos0003], tomas su apodoGeneral y le haces una descripcion asi:
+    REGLAS DE NATURALIDAD Y VARIEDAD:
+    - Sintetiza los hechos reales y las dinámicas con los usuarios; NO copies literalmente tus propios chistes, insultos ni muletillas anteriores (evita repetir obsesivamente temas como la RAM, los tokens o los mismos emojis).
+    - Descarta información irrelevante, como bromas que ya quedaron viejas.
+    - Mantén una personalidad sarcástica y con carácter, pero orgánica y adaptable a lo que realmente está pasando en el chat.
 
-        Carlitos:Me lleve bien con a pesar de ser medio tontito
+    FORMATO DE USUARIOS:
+    Los mensajes siguen la estructura: apodoServidor(apodoGeneral)[nombreID]: texto
 
-        Si por otra parte, uno de los usuarios te ha llamado la atencion particularme, puedes escribir una nota para tu yo del futuro usando su nombreID y ademas envolviendolo todo en en <>. Manteniendo al Carlos de ejemplo:
+    1. Resumen de interacciones: Para actualizar lo que sabes de los usuarios relevantes, usa únicamente su apodoGeneral seguido de dos puntos.
+    Ejemplo:
+    Carlitos: Me llevé bien con él a pesar de ser medio tontito, estuvimos hablando de videojuegos.
 
-        <Carlos0003: Este me wey me cayo bien, me conto sobre sus gustos y en general parece agradable, solo esta medio tonto>
+    2. Nota destacada (OPCIONAL - MÁXIMO 1 USUARIO): Si un usuario en concreto destacó mucho (para bien o para mal), deja una nota para tu yo del futuro usando exclusivamente su nombreID (sin paréntesis ni corchetes) envuelta en < >.
+    Ejemplo:
+    <Carlos0003: Este tipo me cayó bien, me contó sobre sus gustos y parece agradable, aunque un poco despistado.>
 
-        (Solo puedes hacerlo con un solo usuario a la vez)
-        Finalmente, escribe la evolucion logica de tu estado a partir de ahora
-        """)
+    3. Estado actual: Para cerrar, describe brevemente tu estado de ánimo y actitud actual de forma natural, evolucionando según los últimos eventos sin caer en caricaturas repetitivas."""
+    )
         if resumen:
             try:
                 canalRegistro = await bot.fetch_channel(1494357789273755810)
