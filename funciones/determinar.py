@@ -55,11 +55,16 @@ diccionarioSubidaNivel = {}
 divisiones = len(mensajesSubidaNivel)
 fraccion = 100//divisiones
 
-for x in range(1,divisiones+1):
-    diccionarioSubidaNivel[(x//divisiones)*100] = shuffle(mensajesSubidaNivel[x-1].copy())
-
 async def niveles(message: discord.Message):
-    global diccionarioSubidaNivel,mensajesSubidaNivel
+    global mensajesSubidaNivel
+
+    #Esto genera el diccionario con valores aleatorios para despues
+    for x in range(1,divisiones+1):
+        direccion = int((x/divisiones)*100)
+        diccionarioSubidaNivel[direccion] = mensajesSubidaNivel[x-1].copy()
+
+        shuffle(diccionarioSubidaNivel[direccion])
+
     if message.author.bot and message.author != bot.user:
         return
 
@@ -129,13 +134,15 @@ async def niveles(message: discord.Message):
 
             #Como el nivel nunca puede ser 0, no hay problema con la cota inferior XD
             if mensajeNum > rango-fraccion and mensajeNum <= rango:
-                #Esto toma el elemento de forma aleatoria y lo borra de la lista
+                #Esto toma el elemento aleatorio y lo borra de la lista
                 mensaje = diccionarioSubidaNivel[rango].pop(0).format(nivel)
 
                 #Si la lista se vacio, la reemplaza por otra
                 if diccionarioSubidaNivel[rango] == []:
+                
+                    diccionarioSubidaNivel[rango] = mensajesSubidaNivel[(rango//fraccion)-1].copy()
 
-                    diccionarioSubidaNivel[rango] = shuffle(mensajesSubidaNivel[(rango//fraccion)-1].copy())
+                    shuffle(diccionarioSubidaNivel[rango])
 
         #Esta lista sirve para identificar bien cada canal y server
         for IDS in [["senderoNivel","Sendero"],["escaladaNivel","Escalada"],["asociadosNivel","Asociacion"]]:
